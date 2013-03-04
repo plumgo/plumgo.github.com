@@ -1,0 +1,316 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>VirtualBox 虚拟机使用（网络配置） | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="上一篇介绍了VirtualBox的基本安装与操作，可以应付只需要单台客户机环境的情况，实际使用中可能遇到的网络环境很复杂，或者要搭建出一个由多台客户机组成的网络等等。为了处理这些问题，需要VirtualBox网络配置的知识，这即是本篇的主题。
+VirtualBox提供了四种网络配置模式，在设置（S）-&gt;网络中设置：
+
+NAT(Network Address Translation)：网络地址转换
+Bridged Adapter：桥接
+Internal：内部
+Host-only：主机">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="VirtualBox 虚拟机使用（网络配置）"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-10T08:31:55.000Z"><a href="/virtualbox-tutorial2-network-setting.html">2011-05-10</a></time>
+      
+      
+  
+    <h1 class="title">VirtualBox 虚拟机使用（网络配置）</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><a href="http://plumgo.cc/blog/2011/05/10/virtualbox-tutorial-1-basic/">上一篇</a>介绍了VirtualBox的基本安装与操作，可以应付只需要单台客户机环境的情况，实际使用中可能遇到的网络环境很复杂，或者要搭建出一个由多台客户机组成的网络等等。为了处理这些问题，需要VirtualBox网络配置的知识，这即是本篇的主题。</p>
+<p>VirtualBox提供了四种网络配置模式，在设置（S）-&gt;网络中设置：</p>
+<ol>
+<li>NAT(Network Address Translation)：网络地址转换</li>
+<li>Bridged Adapter：桥接</li>
+<li>Internal：内部</li>
+<li>Host-only：主机</li>
+</ol>
+<span id="more"></span>
+
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4081?filename=vb_network.jpg" title="vb network"><img src="http://storage.live.com/items/9E87992F08CD005F!4081?filename=vb_network.jpg" alt="vb network"></a></p>
+<h3><strong>NAT模式</strong></h3>
+<ul>
+<li>介绍：顾名思义，所有客户机的网络请求都是又主机转发的，真实网络中并不存在客户机，所以主机与网络中的任何机器都不能查看和访问客户机。</li>
+<li>关系：客户机可以访问主机与网络中其他机器，反过来不行。客户机与客户机之间相互独立，无法连通。</li>
+<li>特点：做好端口映射后主机也可以访问客户机上的服务。主机与客户机之间的通信不受主机网卡连接与否的影响。如果主机网络中的IP地址有限制，有客户机又有上网的需要可以使用这种模式。</li>
+</ul>
+<h3><strong>Bridged Adapter模式</strong></h3>
+<ul>
+<li>介绍：这种模式是利用主机网卡做网桥，将客户机直接接入真实网络中，客户机会被分配到独立IP，所有网络环境和真实的机器一样。IP地址一般由DHCP分配，一般与主机的本地连接IP同一网段。</li>
+<li>关系：由于客户机有独立IP，主机与客户机、网络中其他主机与客户机；客户机之间都可以相互访问。</li>
+<li>特点：主机与虚拟机通信受主机网卡连接与否的影响。</li>
+</ul>
+<h3><strong>Internal模式</strong></h3>
+<ul>
+<li>介绍：内网模式，就是主机与客户机的网络完全断开，只是用于实现客户机与客户机之间组成网络的场景。VirtualBox内置的DHCP会为客户机分配IP，一般得到的事192.168.56.*（从101开始）。</li>
+<li>关系：客户机与主机、网络中其他机器都不能相互访问。只能与其他客户机相互访问。</li>
+<li>特点：这种模式不受主机网卡是否连通的影响。</li>
+</ul>
+<h3><strong>Host-only Adapter模式</strong></h3>
+<ul>
+<li><p>介绍：VirtualBox在主机中虚拟出一个专供客户机使用的网卡，所有客户机都是连接到该网卡上的，通过设置这个网卡实现其他功能（前面三种模式都可以实现）。</p>
+</li>
+<li><p>关系：默认情况下，客户机与主机、客户机与网络中其他主机不能进行通信，客户机之间可以进行通信。</p>
+</li>
+<li><p>特点：这种模式使用的专用网卡（虚拟的），所以不受主机网卡时候连通影响。</p>
+</li>
+</ul>
+<p><strong>说明</strong></p>
+<ol>
+<li>通过对以上四种模式的说明，可以根据需要灵活配置客户机网络。</li>
+<li>配置网络模式需要在客户机关机的状态下。</li>
+<li>配置好硬件后（即本篇讨论的网络连接模式），还需要设置相应客户机操作系统的网络连接。</li>
+<li>全局的网络参数如DHCP，在管理（F）-&gt;全局设定（P）-&gt;网络中。</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/VirtualBox/">VirtualBox</a>, <a href="/tags/Network/">Network</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

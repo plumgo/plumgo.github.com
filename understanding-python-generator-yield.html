@@ -1,0 +1,341 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Python生成器yield的理解 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="最近读python源码时遇到很多yield使用，和起初理解的有一些差别。已有的资料并不系统而且只关注用法，不知所以然，于是翻阅了PEP（Python Enhancement Proposal）文档再次学习，得出下面内容。
+生成器的设计动机(PEP255)
+2.3版本加入yield关键字
+编程场景中有一类Producor Function，随着调用会生产一系列值。例如，在用于源码解析的tokenize模块中，分析源码时不断通过token返回片段，解决这一问题通常有以下几个方法：">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Python生成器yield的理解"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-12-25T06:15:35.000Z"><a href="/understanding-python-generator-yield.html">2011-12-25</a></time>
+      
+      
+  
+    <h1 class="title">Python生成器yield的理解</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近读python源码时遇到很多yield使用，和起初理解的有一些差别。已有的资料并不系统而且只关注用法，不知所以然，于是翻阅了<a href="http://www.python.org/dev/peps/">PEP</a>（Python Enhancement Proposal）文档再次学习，得出下面内容。</p>
+<h3><strong>生成器的设计动机(<a href="http://www.python.org/dev/peps/pep-0255/">PEP255</a>)</strong></h3>
+<p><strong>2.3版本加入yield关键字</strong></p>
+<p>编程场景中有一类Producor Function，随着调用会生产一系列值。例如，在用于源码解析的tokenize模块中，分析源码时不断通过token返回片段，解决这一问题通常有以下几个方法：</p>
+<span id="more"></span>
+
+<ol>
+<li><p>在全局变量中维护一个状态机用于记录目前进行到哪里，希望下一步获得什么，通过回调方法与外部互动；缺点：状态机维护非常复杂，难以理解。</p>
+</li>
+<li><p>将目标数据全部解析，将跳转逻辑写入控制流，以备调用；缺点：浪费空间。</p>
+</li>
+<li><p>使用迭代器，当调用next的时候进行下一步；缺点：需要手工维护状态，而且不灵活（看C++ STL的实现可以想象，只适合简单逻辑）。</p>
+</li>
+<li><p>利用生产者/消费者模型，将生产与调用过程分开；缺点：需要多线程支持，效率不高。</p>
+</li>
+<li><p>Stackless实现，与4想法类似，使用Stackless提高效率；缺点：需要重新设计Python核心。</p>
+</li>
+</ol>
+<p>可以看到上面的方法都有些许不足，于是，决定采用生成器来解决这个问题，目标是，方法可以保持状态，外部再次调用时可以重新启动，进行“生产（yield）”，不断返回。</p>
+<p><strong>举例1</strong>：只有逻辑，数据无限</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">fib</span><span class="params">()</span>:</span></div><div class="line">    a, b = <span class="number">0</span>, <span class="number">1</span></div><div class="line">    <span class="keyword">while</span> <span class="number">1</span>:</div><div class="line">        <span class="keyword">yield</span> b</div><div class="line">    a, b = b, a+b</div></code></pre></td></tr></table></figure>
+    当方法中出现<code>yield</code>关键字，<code>fib()</code>就成为一个生成器，每当调用<code>fib()</code>时，
+
+1.  利用上次的状态，继续执行(resume)
+2.  执行到yield，携带数据返回(return)
+
+    <strong>举例2</strong>：数据量大，而只关注局部
+
+    在此<a href="http://www.slideshare.net/hongqn/qcon2010-3881323">slide</a>中，演讲者介绍了这样一个需求：用户需要从10个源中获得最新的消息，依据id取前10条显示出来。不好的方法是：分别从10个源中分别取10条出来，然后对这100条进行排序，取前10条返回。缺点显而易见，处理内存、排序开销大不说，有90条数据白查，数据库资源是很珍贵的。
+
+    生成器实现：
+
+    <a href="http://storage.live.com/items/9E87992F08CD005F!4451?filename=python_yield.jpg" title="Python Yield"><img src="http://storage.live.com/items/9E87992F08CD005F!4451?filename=python_yield.jpg" alt="Python Yield"></a>
+
+    这样，在每次生成的时候，
+
+1.  之前的结果可作为参考，通过start_id带入新的查询中
+2.  只需对真正需要的数据做Entry.get操作即可
+
+    可以看到，生成器其实是一个加强版的迭代器
+
+    总结：经过上面对于yield设计动机的了解，不难看出yield使用场景，简单来说，就是在庞大数据集（或者只有逻辑，说明数据无限大）的场景下进行生产（返回符合条件的数据）。
+
+    ### <strong>生成器的加强(<a href="http://www.python.org/dev/peps/pep-0342/">PEP342</a>)</strong>
+
+    <strong>2.5版本改变了yield用法</strong>
+
+    分析上面的提到的方案4、5，不难发现，事实上生成器在等待下次调用前都可以看成休眠状态，改变了程序调用的顺序（Stack），已经具有线程或Stackless的特征，可以用来进行多任务协同。为了完成让生成器进行协同操作，主要改进：增强调用者和被调用者的互动。
+
+1.  将yield变语句为表达式，可以返回值x：
+2.  可以通过调用send(msg)方法向生成器发送消息（之前的调用相当于send(None)）。执行send后生成器恢复运行返回i，并将msg传给上一次的x。
+
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">yield</span> x     <span class="comment">#返回，但是值被扔掉</span></div><div class="line">x = <span class="keyword">yield</span> i <span class="comment">#有值给x</span></div></code></pre></td></tr></table></figure>
+
+<p><strong>举例</strong>:</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">g</span><span class="params">()</span>:</span></div><div class="line">    <span class="keyword">print</span> ‘step <span class="number">1</span>′</div><div class="line">    x = <span class="keyword">yield</span> ‘hello’</div><div class="line">    <span class="keyword">print</span> ‘step <span class="number">2</span>′, ‘x=’, x</div><div class="line">    y = <span class="number">5</span> + (<span class="keyword">yield</span> x)</div><div class="line">    <span class="keyword">print</span> ‘step <span class="number">3</span>′, ‘y=’, y</div></code></pre></td></tr></table></figure>
+
+<p>===1===</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div></code></pre></td><td class="code"><pre><code><div class="line">&gt;&gt;&gt;f = g()</div><div class="line">&gt;&gt;&gt;f.next()</div><div class="line">step <span class="number">1</span></div><div class="line">‘hello’</div></code></pre></td></tr></table></figure>
+
+<p>与先前一样，返回’hello’</p>
+<p>===2===</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div></code></pre></td><td class="code"><pre><code><div class="line">&gt;&gt;&gt;f.send(<span class="number">5</span>)</div><div class="line">step <span class="number">2</span> x=<span class="number">5</span></div><div class="line"><span class="number">5</span></div></code></pre></td></tr></table></figure>
+
+<p>将消息5发送给生成器，并赋值给x</p>
+<p>第二个yield返回x，也就是5</p>
+<p>===3===</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div></code></pre></td><td class="code"><pre><code><div class="line">&gt;&gt;&gt;f.send(<span class="number">2</span>)</div><div class="line">step <span class="number">3</span> y = <span class="number">7</span></div><div class="line">Traceback (most recent call last):</div><div class="line">File “&lt;pyshell<span class="comment">#13&gt;”, line 1, in &lt;module&gt;</span></div><div class="line">f.send(<span class="number">2</span>)</div><div class="line">StopIteration</div></code></pre></td></tr></table></figure>
+
+<p>yield+x赋值2，加5，所以y=7</p>
+<p>后面没有yield了，所以抛出异常</p>
+<p>另外，关于异常的处理，可以参看文档，并没有理解上的困难。除了PEP，下面这篇也很有参考价值，感谢作者。</p>
+<p><a href="http://blog.donews.com/limodou/archive/2006/09/04/1028747.aspx">[Python 学习]2.5版yield之学习心得</a></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Python/">Python</a>, <a href="/tags/yield/">yield</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

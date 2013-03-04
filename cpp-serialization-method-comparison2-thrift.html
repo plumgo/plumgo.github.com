@@ -1,0 +1,315 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>C++对象序列化方案对比（续:Thrift） | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="C++对象序列化方案对比这篇文章，对比了Boost/MFC/Google ProtoBuf这三种序列化方案，本篇再来介绍一下来自Facebook的Thrift。
+简介
+Thrift是一个用于创建互操作性和可扩展性服务的框架，最初由Facebook贡献，用于解决系统间大数据量传输通信及不同语言环境之间的跨平台特性，可作为二进制的高性能通信中间件，支持数据（对象）序列化和多种类型的RPC服务。目前是Apache中的一个开源项目，遵循Apache2.0许可协议。
+从上面的介绍可以看出，Thrift可以完成的工作不单是对象序列化，还有XML-RPC。这里我们重点介绍对象序列化方面的问题。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="C++对象序列化方案对比（续:Thrift）"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-06-11T07:59:36.000Z"><a href="/cpp-serialization-method-comparison2-thrift.html">2011-06-11</a></time>
+      
+      
+  
+    <h1 class="title">C++对象序列化方案对比（续:Thrift）</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><a href="http://plumgo.cc/blog/2012/06/02/comparsion-of-cpp-serialization-method/">C++对象序列化方案对比</a>这篇文章，对比了Boost/MFC/Google ProtoBuf这三种序列化方案，本篇再来介绍一下来自Facebook的Thrift。</p>
+<h3><strong>简介</strong></h3>
+<p>Thrift是一个用于创建互操作性和可扩展性服务的框架，最初由Facebook贡献，用于解决系统间大数据量传输通信及不同语言环境之间的跨平台特性，可作为二进制的高性能通信中间件，支持数据（对象）序列化和多种类型的RPC服务。目前是Apache中的一个开源项目，遵循Apache2.0许可协议。</p>
+<p>从上面的介绍可以看出，Thrift可以完成的工作不单是对象序列化，还有XML-RPC。这里我们重点介绍对象序列化方面的问题。</p>
+<span id="more"></span>
+
+<h3><strong>架构</strong></h3>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4228?filename=thrift_arch.png" title="Thrift Arch"><img src="http://storage.live.com/items/9E87992F08CD005F!4228?filename=thrift_arch.png" alt="Thrift Arch"></a></p>
+<h4>说明：</h4>
+<ol>
+<li><code>Your Code</code>：你的业务逻辑，由Thrift定义文件生成的代码。</li>
+<li><code>FoService.Client/Processor</code>：Thrift生成的客户端和服务端的处理代码。</li>
+<li><code>Foo.write()/read()</code>：发送、读取数据结构（包括内置数据结构）。</li>
+<li><code>TProtocol</code>与<code>TTransport</code>分别实现Thrift内部定义的协议规范和传输数据标准，是运行时库的一部分，具有相当的稳定性，保证跨平台特性。</li>
+<li><code>Underlying I/O</code>：视语言不同而不同。</li>
+<li>前三部分是由Thrift用过脚本生成的代码，下面三个部分是Thrift的协议、传输及底层IO通信，还有相应的堵塞、非堵塞、单线程、多线程等运行模式。</li>
+</ol>
+<h3><strong>使用</strong></h3>
+<p>使用<code>Thrift</code>时，支持<code>Cocoa</code>，<code>C++</code>，<code>C#</code>，<code>Erlang</code>，<code>Haskell</code>，<code>Java</code>，<code>Ocaml</code>，<code>Perl</code>，<code>PHP</code>，<code>Python</code>，<code>Ruby</code>，<code>Smalltalk</code>。可以自主选择协议、传输和服务器的形式。</p>
+<p>首先，Thrift支持文本和二进制协议，二进制比文本更常使用，但是文本协议也有自己的用途（如调试）。</p>
+<p><code>TBinaryProtocol</code>：直接将数据进行二进制编码，而不是转化为文本的数字。
+<code>TCompactProtocol</code>：非常高效、密集编码数据协议。
+<code>TDenseProtocol</code>：类似于<code>TCompactProtocol</code>，但是在传输中除去meta信息（Java中暂不可用）。
+<code>TJSONProtocol</code>：使用JSON编码的数据。
+<code>TSimpleJSONProtocl</code>：使用JSON的只写协议，适用于脚本解析。
+<code>TDebugProtocol</code>：采用开发人员可读的文本协议，有助于调试。
+其次，下面再说明如何传输。</p>
+<p><code>TSocket</code>：堵塞的套接字I/O传输。
+<code>TFramedTransport</code>：分帧发送数据，每帧都有固定长度。使用非堵塞的服务器时，必须利用这个形式。
+<code>TFileTransport</code>：将数据写入到一个文件中。（无Java实现）
+<code>TMemoryTansport</code>：使用内存I/O。Java中使用ByteArrayOutputStream实现。
+<code>TZlibTransport</code>：执行时使用Zlib压缩，需要与其他传输方式结合使用。（无Java实现）
+最后，说明Thrift服务端的分类。</p>
+<p><code>TSimpleServer</code>：单线程阻塞I/O服务器，主要用于测试。
+<code>TThreadPoolServer</code>：多线程阻塞I/O服务器。
+<code>TNonblockingServer</code>：多线程非阻塞I/O服务器，必须使用<code>TFramedTransport</code>。
+Thrift允许每个服务器只能有一个服务，但是可以变通打破这一限制，可以定义复合服务来扩展服务器功能。</p>
+<h3><strong>对比</strong></h3>
+<p>从功能和实现手法上说，与Google ProtoBuf相似，具有可比性。下面转一份Thrift与Google ProtoBuf比较的数据，采用Java实现，可以大略认识Thrift，有机会在做C++的测试。</p>
+<ol>
+<li>产生数据文件大小：可以看到密集存储的Thrift与Google ProtoBuf相当，优势较其他传统格式如XML明显。</li>
+</ol>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4233?filename=thrift_size_comparison_data.png" title="Thrift Size Comparsion"><img src="http://storage.live.com/items/9E87992F08CD005F!4233?filename=thrift_size_comparison_data.png" alt="Thrift Size Comparsion"></a></p>
+<ol>
+<li>处理速度与内存使用率，看起来也是Thrift更优。
+<a href="http://storage.live.com/items/9E87992F08CD005F!4234?filename=thrift_cpu_data.png" title="Thrift CPU"><img src="http://storage.live.com/items/9E87992F08CD005F!4234?filename=thrift_cpu_data.png" alt="Thrift CPU"></a></li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C%2B%2B/">C++</a>, <a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a>, <a href="/tags/Serialization/">Serialization</a>, <a href="/tags/Thrift/">Thrift</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

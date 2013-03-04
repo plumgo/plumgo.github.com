@@ -1,0 +1,358 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>【译】理解ReadDirectoryChangeW （理论部分） | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="最近需要在文件级别收集Trace信息，在网上没有找到合适的程序，于是决定自己写一个，其中涉及对文件夹的监控问题。这方面的资料很少，中文资料都是网站之间抄来抄去，干货有限。偶然间在blogspot上看到一篇文章很好，将主要内容翻译过来留作纪念，过两天再写一篇把我的Trace程序也拿出来晒晒。
+译文
+
+本文分为理论和实现两部分。
+示例代码下载">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="【译】理解ReadDirectoryChangeW （理论部分）"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-09T07:57:29.000Z"><a href="/understanding-readdirectorychangew-theory.html">2011-09-09</a></time>
+      
+      
+  
+    <h1 class="title">【译】理解ReadDirectoryChangeW （理论部分）</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近需要在文件级别收集Trace信息，在网上没有找到合适的程序，于是决定自己写一个，其中涉及对文件夹的监控问题。这方面的资料很少，中文资料都是网站之间抄来抄去，干货有限。偶然间在blogspot上看到<a href="http://qualapps.blogspot.com/2010/05/understanding-readdirectorychangesw.html">一篇文章</a>很好，将主要内容翻译过来留作纪念，过两天再写一篇把我的Trace程序也拿出来晒晒。</p>
+<p>译文</p>
+<hr>
+<p>本文分为理论和实现两部分。</p>
+<p><a href="http://cid-e030bb50921fff08.skydrive.live.com/self.aspx/.Public/Blog%20Sample%20Code/ReadDirectoryChanges.zip">示例代码下载</a></p>
+<span id="more"></span>
+
+<h2><strong>四种监控文件和文件夹的方法</strong></h2>
+<h3>1.使用<code>SHChangeNotifyRegister</code></h3>
+<p>此API使用Windows消息机制，所以需要一个窗口句柄，通过Windows Shell（即Explorer）通知驱动。故用此API实现的程序只能依赖于Shell通知监控，如果用户操作都是通过Explorer完成，则非常有效，而通过其他途径的操作则无法监控。</p>
+<p><code>SHChangeNotifyRegister</code>这个API被定义和使用在Windows Vista中，用来报告所有文件的更改，那么意味着对Windows XP系统用户还不能马上使用。而且存在效率问题，由于利用windows窗口消息机制实现，如果改变太多，有可能漏掉一些消息的细节。</p>
+<h3>2.使用<code>FindFirstChangeNotification</code>或<code>ReadDirectoryChangesW</code></h3>
+<p>两者都是Windows 2000提供的接口，<code>FindFirstChangeNotification</code>没有什么改变的任何信息。即便如此，可以应付如传真服务器和SMTP服务器中接收队列中删除文件后提交应用。而<code>ReadDirectoryChangesW</code>会告知什么文件怎样改变，当然开销会变大。</p>
+<p>这两个函数运行要比依赖Shell通知的<code>SHChangeNotifyRegister</code>快，但是依然存在性能问题，当几千个文件从一个目录移动到另一个目录，仍然会导致一些通知丢失。</p>
+<p>注意<code>FindFirstChangeNotification</code>和<code>ReadDirectoryChangesW</code>是互斥的，不能同时使用。</p>
+<h3>3.Change Journal</h3>
+<p>Windows XP中有终极解决方案，Change Journal，可以追溯每一个更改细节，即便不运行任何程序，技术很好，但是使用复杂。</p>
+<h3>4.文件系统过滤器</h3>
+<p>使用FileMon工具，在Windows Driver Kit（WDK）中有个例子可以实现这个功能，然而这个方案本质上是个设备驱动程序，如果不能正确执行，可能会影响系统的稳定性。</p>
+<p>综上所述，<code>ReadDirectoryChangesW</code>是比较理想的实现方案。</p>
+<h2><strong>谜团</strong></h2>
+<p>使用ReadDirectoryChangesW最大的挑战是，有几百种I/O模式，处理信号，等待方法，线程模型组合的可能性，除非是Win32 I/O专家，不可能搞清楚这些，下面简要的说明：</p>
+<p>A. I/O模型</p>
+<ol>
+<li><p>阻塞同步（Blocking Synchronous）</p>
+</li>
+<li><p>信号同步（Signaled Synchronous）</p>
+</li>
+<li><p>重叠异步（Overlapped Asynchronous）</p>
+</li>
+<li><p>完成例程（Completion Routine），又称异步过程调用或APC</p>
+</li>
+</ol>
+<p>B.当调用WaitForXxx函数，可以：</p>
+<ol>
+<li><p>等待目录处理</p>
+</li>
+<li><p>等待Overlapped结构中的时间对象</p>
+</li>
+<li><p>等待其他（为了APCs）</p>
+</li>
+</ol>
+<p>C.为了处理时间，可以使用：</p>
+<ol>
+<li><p>Blocking</p>
+</li>
+<li><p>WaitForSignleObject</p>
+</li>
+<li><p>WaitForMultipleObjects</p>
+</li>
+<li><p>WaitForMultipleObjectsEx</p>
+</li>
+<li><p>MsgWaitForMultipleObjectsEx</p>
+</li>
+<li><p>I/O Completion Ports</p>
+</li>
+</ol>
+<p>D.对于线程模型，可以使用：</p>
+<ol>
+<li><p>调用每个工作线程</p>
+</li>
+<li><p>多次调用每个工作线程</p>
+</li>
+<li><p>多次调用主线程</p>
+</li>
+<li><p>多次调用多个线程（I/O Completion Ports）</p>
+</li>
+</ol>
+<p>调用ReadDirectoryChangesW时，可以用特定的标记来选择监听什么，包括文件的创建，最后修改时间的改变，属性改变等等，每次调用可以使用一个标记发出多个调用，或者在一次调用中使用多个标记。多标记是正确的方案，如果你认为需要使用多次调用，每次调用一个标记，这样更容易弄清楚做什么，那么需要阅读更多ReadDirectoryChangesW返回通知缓冲区中的数据。</p>
+<p>建议的解决方案
+那么什么是正确的答案呢？取决于：</p>
+<ul>
+<li><p>简单（A2C3D1）：每个ReadDirectoryChangesW调用运行在它自己的线程，并将结果通过PostMessage发送到主线程。最适合小性能要求的GUI程序。这个策略被使用在CDirectoryChangeWather和微软的FWATCH代码中。</p>
+</li>
+<li><p>性能（A4C6D4）：最高性能的解决方案是使用I/O Completion ports，是一个有效的多线程解决方案，这也是非常复杂的方案，应限于服务器，如果你不是多线程专家，请远离这一策略。</p>
+</li>
+<li><p>平衡（A4C5D3）：所有的事情都在一个有完成例程的单线程里面做。你可以随意根据需要调用ReadDirectoryChangesW，由于完成例程自动调度处理没有等待。你可以嵌入指针指向回调函数的对象，所有很容易保持原始数据结构匹配的回调。</p>
+</li>
+</ul>
+<p>我原本以为GUI程序用MsgWaitForMultipleObjectsEx来更改Windows消息。但无法正常工作，因为对话框有自己的消息循环，这无法改变，所以对话框显示阻止通知被处理。另一个好注意streamrolled实现。</p>
+<h2><strong>错误的技术</strong></h2>
+<p>我研究解决方案时，看到了很多建议，但有些错误，下面说明一下：</p>
+<p>如果你使用的是上面“简单”的解决方案，不使用阻塞调用，因为只有这样，才能取消处理或者使用Vista独有的CancelSynchronouslo。相反，使用信号异步I/O模式等待目录处理。此外，终止线程时，不要使用TerminateThread，因为无法清理资源引起各种问题。可以通过设置一个手动时间对象并在WaitForMultipleObjects中调用，然后退出线程。</p>
+<p>如果有数十或上百个文件夹需要监控，不要使用“简单”策略，转为“平衡”策略。可以优化为监控一个普通根目录或者忽略不关心的目录。</p>
+<p>如果需要监控整个驱动器，请三思而后行。程序会通知你每一个临时文件，每个Internet缓存文件，每一个程序数据的变化。总之，这个通知量会非常大，会减慢整个系统的运作。如果你需要监控整个驱动器，你应该使用Change Journal。这样即使应用程序没有运行也可以跟踪更改。千万别用FILE_NOTIFY_CHANGE_LAST_ACCESS监控整个驱动器。</p>
+<p>如果你使用的是重叠 I/O而不是I/O Completion prot，不要处理上等待，使用完成例程来替代。这移除了64的处理限制，允许操作系统处理调用调度，而且允许你在OVERLAPPED结构对象中嵌入指针。我的例子将会展示这一切。</p>
+<p>如果你使用工作线程，不要通过SendMessage发送结果到主线程中，使用PostMessage。SendMessage是同步的而且主线程繁忙是不会返回，这将会违反使用工作线程的使用初衷。</p>
+<p>通过提供一个巨大的缓存来解决丢失通知的问题很有诱惑，但是，这未必是明智的方法，对于任何给定的缓冲区的大小，从内核非分页内存池分配同样大小的缓冲区，如果缓冲区过大，可能会导致严重的问题，包括蓝屏死机。</p>
+<p>感谢MSDN社区匿名贡献者。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C%2B%2B/">C++</a>, <a href="/tags/Windows/">Windows</a>, <a href="/tags/Filesystem/">Filesystem</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

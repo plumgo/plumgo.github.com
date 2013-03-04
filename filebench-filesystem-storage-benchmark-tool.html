@@ -1,0 +1,308 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Filebench：文件系统存储基准测试工具 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="介绍
+Filebench是一个文件系统和存储基准测试工具。支持：
+
+多种工作负载类型；
+预定义40多种负载，可以模拟邮件、web、文件、数据库服务器行为；
+通过Workload Model Language(WML)自定义工作负载；
+多进程和多线程负载；
+可设置的目录继承深度、宽度及文件大小，并符合统计分布；
+异步I/O操作和进程同步原语；
+集成吞吐量、延时、CPU使用系统调用的统计功能；
+运行于Linux，FreeBSD，Solaris等POSIX兼容的操作系统。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Filebench：文件系统存储基准测试工具"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-11-03T06:33:31.000Z"><a href="/filebench-filesystem-storage-benchmark-tool.html">2011-11-03</a></time>
+      
+      
+  
+    <h1 class="title">Filebench：文件系统存储基准测试工具</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3><strong>介绍</strong></h3>
+<p>Filebench是一个文件系统和存储基准测试工具。支持：</p>
+<ol>
+<li>多种工作负载类型；</li>
+<li>预定义40多种负载，可以模拟邮件、web、文件、数据库服务器行为；</li>
+<li>通过Workload Model Language(WML)自定义工作负载；</li>
+<li>多进程和多线程负载；</li>
+<li>可设置的目录继承深度、宽度及文件大小，并符合统计分布；</li>
+<li>异步I/O操作和进程同步原语；</li>
+<li>集成吞吐量、延时、CPU使用系统调用的统计功能；</li>
+<li>运行于Linux，FreeBSD，Solaris等POSIX兼容的操作系统。</li>
+</ol>
+<span id="more"></span>
+
+<h3><strong>安装</strong></h3>
+<ul>
+<li>下载地址：<a href="http://sourceforge.net/projects/filebench/"><a href="http://sourceforge.net/projects/filebench/">http://sourceforge.net/projects/filebench/</a></a></li>
+<li>编译安装：<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div></code></pre></td><td class="code"><pre><code><div class="line">./configure</div><div class="line"><span class="title">make</span></div><div class="line"><span class="title">sudo</span> make install</div></code></pre></td></tr></table></figure>
+
+</li>
+</ul>
+<p>默认安装可执行文件到<code>/usr/local/bin/filebench</code>，工作负载到<code>/usr/local/share/filebench/workload</code>，可以通过<code>configure</code>修改。</p>
+<h3><strong>使用</strong></h3>
+<p>Filebench产生I/O请求通过执行定义好的工作负载，前面提到已经准备好了一些可用的，如果有特别的需要可以通过自行定义。可执行文件出于PATH里的目录中时，输入filebench即可。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div></code></pre></td><td class="code"><pre><code><div class="line">user@host$ filebench</div><div class="line">Filebench Version <span class="number">1.4</span><span class="number">.9</span></div><div class="line">IMPORTANT: Virtual address <span class="constant">space</span> randomization <span class="keyword">is</span> enabled <span class="function_start"><span class="keyword">on</span> <span class="title">this</span></span> machine!</div><div class="line">It <span class="keyword">is</span> highly recommended <span class="keyword">to</span> disable randomization <span class="keyword">to</span> provide stable Filebench runs.</div><div class="line">Echo <span class="number">0</span> <span class="keyword">to</span> /proc/sys/kernel/randomize_va_space <span class="type">file</span> <span class="keyword">to</span> disable <span class="keyword">the</span> randomization.</div><div class="line">WARNING: Could <span class="keyword">not</span> open /proc/sys/kernel/shmmax <span class="type">file</span>!</div><div class="line">It means <span class="keyword">that</span> you probably ran Filebench <span class="keyword">not</span> <span class="keyword">as</span> a root. Filebench will <span class="keyword">not</span> increase shared region limits <span class="keyword">in</span> this case, which can lead <span class="keyword">to</span> <span class="keyword">the</span> failures <span class="function_start"><span class="keyword">on</span> <span class="title">certain</span></span> workloads.</div><div class="line"><span class="number">11431</span>: <span class="number">0.000</span>: Allocated <span class="number">170</span>MB <span class="keyword">of</span> shared memory</div><div class="line">filebench&gt; quit</div><br></code></pre></td></tr></table></figure>
+
+<p>如果得到上面提示，首先输入quit，退出Filebench，然后对系统做出一些调整：</p>
+<p>大多数Linux发行版启用了地址空间随机化<code>address space randomization</code>，这会妨碍Filebench在不同的进程中的一个共享内存区域映射到相同的地址，可以通过<code>echo 0 &amp;gt; /proc/sys/kernel/randomize_va_space</code>语句禁用此功能，从而获得稳定的多进程负载。
+第二个警告是说Filebench不能增加共享内存的大小，你可以通过利用root身份运行Filebench或者增加内存忽略警告<code>sudo echo 268435456 &amp;gt; /proc/sys/kernel/randomize_va_space</code></p>
+<p>调整完成后，可以运行一个benchmark熟悉一下使用参数：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div></code></pre></td><td class="code"><pre><code><div class="line">filebench&<span class="keyword">gt</span>; load fileserver  <span class="comment">#载入工作负载</span></div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>: FileServer Version <span class="number">2.2</span> personality successfully loaded</div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>: Usage: set <span class="variable">$dir</span>=&<span class="keyword">lt</span>;dir&<span class="keyword">gt</span>;</div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>:        set <span class="variable">$meanfilesize</span>=&<span class="keyword">lt</span>;size&<span class="keyword">gt</span>;     defaults to <span class="number">131072</span></div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>:        set <span class="variable">$nfiles</span>=&<span class="keyword">lt</span>;value&<span class="keyword">gt</span>;      defaults to <span class="number">10000</span></div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>:        set <span class="variable">$nthreads</span>=&<span class="keyword">lt</span>;value&<span class="keyword">gt</span>;    defaults to <span class="number">50</span></div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>:        set <span class="variable">$meanappendsize</span>=&<span class="keyword">lt</span>;value&<span class="keyword">gt</span>;  defaults to <span class="number">16384</span></div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>:        set <span class="variable">$iosize</span>=&<span class="keyword">lt</span>;size&<span class="keyword">gt</span>;  defaults to <span class="number">1048576</span></div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>:        set <span class="variable">$meandirwidth</span>=&<span class="keyword">lt</span>;size&<span class="keyword">gt</span>; defaults to <span class="number">20</span></div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>: (sets mean dir width <span class="keyword">and</span> dir depth is calculated as <span class="keyword">log</span> (width, nfiles)</div><div class="line"><span class="number">12462</span>: <span class="number">2.869</span>:        run runtime (e.g. run <span class="number">60</span>)filebench&<span class="keyword">gt</span>; set <span class="variable">$dir</span>=<span class="regexp">/mnt #根据上面提示设置参数</div><div class="line">filebench&gt; run 60 #运行</div></code></pre></td></tr></table></figure>
+
+<p>还可以采用非交互模式运行，使用<code>-f</code>参数运行，在这之前需要在workload文件中添加<code>run &lt;time&gt;</code></p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div></code></pre></td><td class="code"><pre><code><div class="line">root<span class="variable">@host</span><span class="comment"># cp /usr/local/share/filebench/workloads/fileserver.f /tmp/fileserver-noninteractive.f</span></div><div class="line">root<span class="variable">@host</span><span class="comment"># vim /tmp/fileserver-noninteractive.f (add 'run 60' to the end of this file)</span></div><div class="line">root<span class="variable">@host</span><span class="comment"># filebench -f /tmp/fileserver-noninteractive.f</span></div></code></pre></td></tr></table></figure>
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Filebench/">Filebench</a>, <a href="/tags/Filesystem/">Filesystem</a>, <a href="/tags/Benchmark/">Benchmark</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

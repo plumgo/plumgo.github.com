@@ -1,0 +1,308 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>LaTeX排版相关 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="引子
+LaTeX是一种基于TeX的排版系统，广泛使用于科技和数学类文档、论文和专著编写中，许多期刊都要求提供LaTeX格式的版本。
+一些有用的资源：
+1.  有疑问，找文档先：http://www.latex-project.org
+
+疑难杂症看这里：http://tex.stackexchange.com/
+
+CTeX。是使用比较广泛的支持中文的TeX排版软件（Windows环境），从编辑到编译，再到生成各种格式的文档都可以完成，类比于集成开发环境。
+
+在线LaTeX公式编辑器（地址）。提供类似与MathType的操作界面，可以将编辑好的公式发布为HTML, URL, PRE等形式，方便发布或者嵌入到其他地方（比如博客）。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="LaTeX排版相关"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2012-04-11T05:18:20.000Z"><a href="/latex-layout-issues.html">2012-04-11</a></time>
+      
+      
+  
+    <h1 class="title">LaTeX排版相关</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3><strong>引子</strong></h3>
+<p>LaTeX是一种基于TeX的排版系统，广泛使用于科技和数学类文档、论文和专著编写中，许多期刊都要求提供LaTeX格式的版本。</p>
+<p>一些有用的资源：
+1.  有疑问，找文档先：<a href="http://www.latex-project.org"><a href="http://www.latex-project.org">http://www.latex-project.org</a></a></p>
+<ol>
+<li><p>疑难杂症看这里：<a href="http://tex.stackexchange.com/"><a href="http://tex.stackexchange.com/">http://tex.stackexchange.com/</a></a></p>
+</li>
+<li><p><a href="http://www.ctex.org/HomePage">CTeX</a>。是使用比较广泛的支持中文的TeX排版软件（Windows环境），从编辑到编译，再到生成各种格式的文档都可以完成，类比于集成开发环境。</p>
+</li>
+<li><p>在线LaTeX公式编辑器（<a href="http://www.codecogs.com/latex/eqneditor.php">地址</a>）。提供类似与MathType的操作界面，可以将编辑好的公式发布为HTML, URL, PRE等形式，方便发布或者嵌入到其他地方（比如博客）。</p>
+</li>
+</ol>
+<span id="more"></span>
+
+<h3><strong>正文</strong></h3>
+<p>最近利用LaTeX排版遇到几个麻烦，记录之。</p>
+<p><strong>问题</strong>：默认情况下图、表独占整行，为了压缩篇幅，有时候希望并排显示不太宽的两图、两表、图和表（分开说是因为语句不同），总的来说像这样：</p>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4456?filename=latex.png" title="LaTeX"><img src="http://storage.live.com/items/9E87992F08CD005F!4456?filename=latex.png" alt="LaTeX"></a></p>
+<p><strong>搜索</strong>：figure / table side-by-side</p>
+<p>1.并排显示两图/两表</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div></code></pre></td><td class="code"><pre><code><div class="line">begin<span class="cell">{figure}</span><span class="matrix">[!htbp]</span></div><br><div class="line">begin<span class="cell">{minipage}</span><span class="matrix">[b]</span><span class="cell">{<span class="number">0.5</span>linewidth}</span></div><div class="line">centering</div><div class="line">includegraphics<span class="matrix">[scale=<span class="number">0.8</span>]</span><span class="cell">{./images/figure1.eps}</span></div><div class="line"><span class="keyword">end</span><span class="cell">{minipage}</span></div><br><div class="line">begin<span class="cell">{minipage}</span><span class="matrix">[b]</span><span class="cell">{<span class="number">0.5</span>linewidth}</span></div><div class="line">centering</div><div class="line">includegraphics<span class="matrix">[scale=<span class="number">0.7</span>]</span><span class="cell">{./images/figure2.eps}</span></div><div class="line"><span class="keyword">end</span><span class="cell">{minipage}</span></div><br><div class="line"><span class="keyword">end</span><span class="cell">{figure}</span></div></code></pre></td></tr></table></figure>
+
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div><div class="line-number">15</div><div class="line-number">16</div><div class="line-number">17</div><div class="line-number">18</div><div class="line-number">19</div><div class="line-number">20</div><div class="line-number">21</div><div class="line-number">22</div><div class="line-number">23</div><div class="line-number">24</div><div class="line-number">25</div><div class="line-number">26</div><div class="line-number">27</div><div class="line-number">28</div><div class="line-number">29</div><div class="line-number">30</div><div class="line-number">31</div><div class="line-number">32</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">begin</span>{table}[!htb]</div><div class="line"><span class="title">begin</span>{minipage}[b]{<span class="number">.50</span>textwidth}</div><div class="line"><span class="title">centering</span></div><br><div class="line">{begin{tabular}{cccccc}</div><div class="line"><span class="title">toprule</span></div><div class="line"><span class="title">item1</span> & item2 \</div><div class="line"><span class="title">midrule</span></div><div class="line"><span class="title">xxx</span> & <span class="number">1</span>    \</div><div class="line"><span class="title">yyy</span> & <span class="number">2</span>    \</div><div class="line"><span class="title">zzz</span> & <span class="number">3</span>    \</div><div class="line"><span class="title">bottomrule</span></div><div class="line"><span class="title">end</span>{tabular}</div><div class="line"><span class="title">end</span>{center}}</div><div class="line"><span class="title">end</span>{minipage}</div><br><div class="line"><span class="title">quad</span></div><br><div class="line"><span class="title">begin</span>{minipage}[b]{<span class="number">.50</span>textwidth}</div><div class="line"><span class="title">centering</span></div><div class="line">{begin{tabular}{cccccc}</div><div class="line"><span class="title">toprule</span></div><div class="line"><span class="title">item3</span> & item4 \</div><div class="line"><span class="title">midrule</span></div><div class="line"><span class="title">aaa</span> & <span class="number">4</span>    \</div><div class="line"><span class="title">bbb</span> & <span class="number">5</span>    \</div><div class="line"><span class="title">ccc</span> & <span class="number">6</span>    \</div><div class="line"><span class="title">bottomrule</span></div><div class="line"><span class="title">end</span>{tabular}</div><div class="line"><span class="title">end</span>{center}}</div><div class="line"><span class="title">end</span>{minipage}</div><div class="line"><span class="title">end</span>{table}</div></code></pre></td></tr></table></figure>
+
+
+<p>2.并排显示图与表</p>
+<p>需要引入floatrow。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div><div class="line-number">15</div><div class="line-number">16</div><div class="line-number">17</div><div class="line-number">18</div><div class="line-number">19</div><div class="line-number">20</div><div class="line-number">21</div><div class="line-number">22</div><div class="line-number">23</div><div class="line-number">24</div><div class="line-number">25</div><div class="line-number">26</div><div class="line-number">27</div><div class="line-number">28</div><div class="line-number">29</div><div class="line-number">30</div><div class="line-number">31</div><div class="line-number">32</div></code></pre></td><td class="code"><pre><code><div class="line">documentclass<span class="cell">{article}</span></div><br><div class="line">usepackage<span class="cell">{floatrow}</span></div><div class="line"><span class="comment">% Table float box with bottom caption, box width adjusted to content</span></div><div class="line">newfloatcommand<span class="cell">{capbtabbox}</span><span class="cell">{table}</span><span class="matrix">[]</span><span class="matrix">[FBwidth]</span></div><br><div class="line">usepackage<span class="cell">{blindtext}</span></div><br><div class="line">begin<span class="cell">{document}</span></div><br><div class="line">blindtext</div><br><div class="line">begin<span class="cell">{figure}</span></div><div class="line">begin<span class="cell">{floatrow}</span></div><div class="line">ffigbox<span class="cell">{%</div><div class="line">rule{<span class="number">3</span>cm}</span><span class="cell">{<span class="number">3</span>cm}</span><span class="comment">%</span></div><div class="line">}<span class="cell">{%</div><div class="line">caption{A figure}</span><span class="comment">%</span></div><div class="line">}</div><div class="line">capbtabbox<span class="cell">{%</div><div class="line">begin{tabular}</span><span class="cell">{cc}</span> hline</div><div class="line">Author & Title \ hline</div><div class="line">Knuth & The TeX book \</div><div class="line">Lamport & LaTeX \ hline</div><div class="line"><span class="keyword">end</span><span class="cell">{tabular}</span></div><div class="line">}<span class="cell">{%</div><div class="line">caption{A table}</span><span class="comment">%</span></div><div class="line">}</div><div class="line"><span class="keyword">end</span><span class="cell">{floatrow}</span></div><div class="line"><span class="keyword">end</span><span class="cell">{figure}</span></div><br><div class="line"><span class="keyword">end</span><span class="cell">{document}</span></div></code></pre></td></tr></table></figure>
+
+<p>3.双语标题</p>
+<p>一些杂志需要图标注双语标题，可以使用ccaption包中的bicaption来实现。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">%usepackage[centerlast]{caption2}</span></div><div class="line">usepackage<span class="matrix">[]</span><span class="cell">{ccaption}</span></div><br><div class="line">bicaption<span class="matrix">[label1]</span><span class="cell">{表}</span><span class="cell">{中文表标题}</span><span class="cell">{Table}</span><span class="cell">{English Table Title}</span></div><div class="line">bicaption<span class="matrix">[label2]</span><span class="cell">{图}</span><span class="cell">{中文图标题}</span><span class="cell">{Figure}</span><span class="cell">{English Figure Title}</span></div></code></pre></td></tr></table></figure>
+
+<p>注意，<code>bicaption</code>不需要单独的<code>label</code>标签，上面的<code>label1/label2</code>就是标签，先前引用的形式可能是 <code>ref{tab:label1}</code>，现在要改为：<code>ref{label1}</code>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/LaTeX/">LaTeX</a>, <a href="/tags/CTeX/">CTeX</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

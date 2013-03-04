@@ -1,0 +1,593 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Archives: 2011/05 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+
+<h2 class="archive-title">2011/05</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-26T08:08:37.000Z"><a href="/dynamo-simple-implemenation-pro-deployment.html">2011-05-26</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/dynamo-simple-implemenation-pro-deployment.html">Dynamo精简实现系统：PRO（部署）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>上面两篇分别介绍了<a href="http://plumgo.cc/blog/2011/05/22/dynamo-simple-implemenation-pro-introduction/">PRO的基本理论</a>、<a href="http://plumgo.cc/blog/2011/05/25/dynamo-simple-implemenation-pro-compilation/">编译及系统基本结构</a>，这里再介绍构建一个虚拟集群环境部署系统。</p>
+<h3><strong>虚拟网络环境</strong></h3>
+<p>利用VirtualBox安装3个Ubuntu Server 10.10作为服务器，之前用到的Ubuntu Desktop作为客户端，再将这4台虚拟计算机配置成一个虚拟局域网络，为了方面安装依赖包，同时要求每台计算机都可以访问互联网。下面说明如何利用VirtualBox构建一个虚拟网络来部署PRO，当然了解<a href="http://plumgo.cc/blog/2011/05/10/virtualbox-tutorial-2-network-setting/">VirtualBox的网络设置</a>是必须的。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/dynamo-simple-implemenation-pro-deployment.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-25T08:14:39.000Z"><a href="/dynamo-simple-implemenation-pro-compilation.html">2011-05-25</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/dynamo-simple-implemenation-pro-compilation.html">Dynamo精简实现系统：PRO（编译）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3><strong>编译环境</strong></h3>
+<p>首先利用VirtualBox<a href="http://plumgo.cc/blog/2011/05/10/virtualbox-tutorial-1-basic/">构建虚拟机</a>，安装自己用起来顺手的Linux发行版，这里用的是Ubuntu 10.10 Desktop。打开PRO代码目录，看到有Makefile文件，启动终端运行make，程序编译成功！生成<code>server</code>, <code>clientd</code>, <code>client</code>三个程序。通过阅读唯一的文档README，得知：</p>
+<ol>
+<li><p>服务器端程序（server）需要一个<code>server.conf</code>文件按顺序存放其他服务器的IP地址和端口信息，运行不需要参数；</p>
+</li>
+<li><p>客户端守护程序（clientd）也需要一个<code>server.txt</code>记录所有服务器的IP与端口信息，运行不需要参数；</p>
+</li>
+<li><p>客户端程序（client）通过提供参数 <code>–k KEY [-v VALUE]</code>，实现键值存储的功能。</p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/dynamo-simple-implemenation-pro-compilation.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:21:27.000Z"><a href="/cpp-operator-overloading.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/cpp-operator-overloading.html">C++运算符重载</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在网上搜到一篇讲得很好，转过来并略加注释。</p>
+<hr>
+<p>C++中预定义的运算符的操作对象只能是基本数据类型。但实际上，对于许多用户自定义类型（例如类），也需要类似的运算操作。这时就必须在C++中重新定义这些运算符，赋予已有运算符新的功能，使它能够用于特定类型执行特定的操作。运算符重载的实质是函数重载，它提供了C++的可扩展性，也是C++最吸引人的特性之一。</p>
+<p>一些编程语言没有运算符重载的特性，如Java。这些语言的设计者认为：运算符重载会增加编程的复杂性；或者由于使用者功力的问题引起功能上的混淆；认为<code>a.add(b)</code>比<code>a+b</code>更加面向对象（这个有点牵强）。无论如何，这些理由从反面也可以提醒我们：在重载运算符的时候要注意语义，权衡实施的必要性。</p>
+<p>运算符重载是通过创建运算符函数实现的，运算符函数定义了重载的运算符将要进行的操作。运算符函数的定义与其他函数的定义类似，惟一的区别是运算符函数的函数名是由关键字<code>operator</code>和其后要重载的运算符符号构成的。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/cpp-operator-overloading.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:18:14.000Z"><a href="/visual-cpp-60-non-standard-collection.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/visual-cpp-60-non-standard-collection.html">Visual C++6.0未遵循标准部分</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Visual C++ 6.0无疑是相当时间内C++编程的首选IDE。但编译器产生年代的关系和MS的战略问题，较之同类，对C++标准的支持程度不够好，很容易给编程带来困惑和不必要的麻烦，这一篇就用来收集VC6中一些与标准C++有出入的地方，并不断更新。</p>
+<p>具体的解决问题办法可以去这里找：<a href="http://support.microsoft.com/?scid=ph;zh-cn;3003"><a href="http://support.microsoft.com/?scid=ph;zh-cn;3003">http://support.microsoft.com/?scid=ph;zh-cn;3003</a></a></p>
+<h3><strong><code>&lt;iostream&gt;</code>与<code>&lt;iostream.h&gt;</code></strong></h3>
+<p>较新的（相对于VC6产生的年代）C++标准反对把.h符号继续使用在标准头文件中，所以可以看到一般在较早的C/C++的标准中的标准库,如<code>time.h</code>在新标准中都有替代<code>ctime</code>。从功能角度来讲，<iostream.h>仅仅支持字符流，以全局函数声明；而<code>&lt;iostream&gt;</code>中都是以STL形式声明的，通用性更强。这也可以同时解释，为什么<code>&lt;iostream&gt;</code>需要<code>using namespace std;</code>来引入命名空间。另外，输入输出流的C++标准规范接口在一些微妙的细节上都已经改进，所以推荐使用<code>&lt;iostream&gt;</code>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/visual-cpp-60-non-standard-collection.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-22T08:24:44.000Z"><a href="/dynamo-simple-implemenation-pro-introduction.html">2011-05-22</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/dynamo-simple-implemenation-pro-introduction.html">Dynamo精简实现系统：PRO（简介）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2><strong>Dynamo简介</strong></h2>
+<p>Dynamo是一个高可用，专有的键值结构化存储系统，或分布式存储系统。它同时具有数据库和分布式哈希表（DHTs）的特征，并不直接暴露在外网，而是为Amazon Web Services(AWS)提供底层支持。</p>
+<p>更多准确信息可以直接参看<a href="http://s3.amazonaws.com/AllThingsDistributed/sosp/amazon-dynamo-sosp2007.pdf">Dynamo论文</a>。</p>
+<p>论文本身并没有提出什么新的思想，正如论文中所说，其贡献在于把非常多的技术结合到一起，来完成一个工业场景下的系统。早在2000年的时候Brewer教授就告诉我们分布式系统的CAP原则，分布式系统不可避免的会遇到如下问题：</p>
+<ol>
+<li>一致性（Consistency）</li>
+<li>可用性（Availability）</li>
+<li>分区容错性（Partition tolerance）</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/dynamo-simple-implemenation-pro-introduction.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-13T08:27:06.000Z"><a href="/comparsion-of-cpp-serialization-method.html">2011-05-13</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/comparsion-of-cpp-serialization-method.html">C++对象序列化方案对比</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>序列化是将对象状态信息转换为可存储或传输的过程，序列化时，对象会将当前状态写入到临时或持久性的存储区。以后，可以通过从存储区中读取或反序列化对象的状态，重新创建该对象。</p>
+<p>对象序列化反序列化通常用于：</p>
+<ol>
+<li>将对象存储于硬盘上</li>
+<li>在网络上传送对象的字节序列</li>
+</ol>
+<p><a href="http://en.wikipedia.org/wiki/Serialization">Wiki介绍</a></p>
+ 
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/comparsion-of-cpp-serialization-method.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-10T08:31:55.000Z"><a href="/virtualbox-tutorial2-network-setting.html">2011-05-10</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/virtualbox-tutorial2-network-setting.html">VirtualBox 虚拟机使用（网络配置）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><a href="http://plumgo.cc/blog/2011/05/10/virtualbox-tutorial-1-basic/">上一篇</a>介绍了VirtualBox的基本安装与操作，可以应付只需要单台客户机环境的情况，实际使用中可能遇到的网络环境很复杂，或者要搭建出一个由多台客户机组成的网络等等。为了处理这些问题，需要VirtualBox网络配置的知识，这即是本篇的主题。</p>
+<p>VirtualBox提供了四种网络配置模式，在设置（S）-&gt;网络中设置：</p>
+<ol>
+<li>NAT(Network Address Translation)：网络地址转换</li>
+<li>Bridged Adapter：桥接</li>
+<li>Internal：内部</li>
+<li>Host-only：主机</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/virtualbox-tutorial2-network-setting.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-07T08:35:23.000Z"><a href="/image-based-modeling-rendering-example-photo-tourism.html">2011-05-07</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/image-based-modeling-rendering-example-photo-tourism.html">基于图像建模与绘制（IBMR）应用举例：Photo Tourism</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2><strong>简介：IBMR</strong></h2>
+<p>IBMR（<a href="http://en.wikipedia.org/wiki/Image-based_modeling_and_rendering">Image-based modeling and rendering</a>）是通过一系列二维场景图像来生成一个三维模型并且绘制一些新的场景视点的技术。</p>
+<p>传统基于几何建模与绘制的标准过程：</p>
+<ol>
+<li>建立一精准的三维几何模型</li>
+<li>设置视点位置</li>
+<li>经过明暗处理</li>
+<li>隐藏面消除</li>
+</ol>
+<p>存在的问题就是建模与绘制的开销较大，图像质量与实时绘制之间的矛盾。</p>
+<p>基于图像的建模与绘制是利用相机拍摄相片代替传统的几何处理来进行建模和图像合成。主要的途径是：从相片中抽取三维信息，重构传统的几何模型，于是归结于计算机视觉领域；将相片作为系统输入，消除以往建模和绘制的过程，代之以二维基于图像的视图重构方法。主要思想是利用预先获得的一组图像来表示场景的形状和外观；而新图像的合成则是通过适当地组合原有的图像来实现。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/image-based-modeling-rendering-example-photo-tourism.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-01T08:37:52.000Z"><a href="/windows-icon-programming-basic.html">2011-05-01</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/windows-icon-programming-basic.html">Windows 图标编程（基础知识）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近有处理Windows可执行文件（PE）文件中图标资源的需求，所以研究了许多关于图标编程的问题，总结如下。</p>
+<h3><strong>发展历程</strong></h3>
+<p>Windows图标格式发展经历了这样<a href="http://msdn.microsoft.com/zh-cn/magazine/cc546571.aspx" title="使用WIC对Windows Vista图标进行解码">几个阶段</a>:</p>
+<p>1.Windows XP 之前，但是不算古老的时代（仅支持DDB格式），主要通过设备无关位图（DIB）来存储图标信息，尽管DIB已经支持Alpha通道（表示透明度），但是一般设备不允许对每个像素增加一个额外的字节用来存储透明信息，所以需要特别的方法来解决透明显示问题。即在正常色位图后，额外存储掩码位图，通过布尔运算将掩码中的与位于目标设备表面结合，达到透明显示的目的。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/windows-icon-programming-basic.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

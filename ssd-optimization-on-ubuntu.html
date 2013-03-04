@@ -1,0 +1,375 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Ubuntu系统SSD硬盘优化全记录 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="硬件改造
+固态硬盘（64G，2.5寸，SATA3.0）装入原先的硬盘位置，购买一个光驱位硬盘托架，将机械硬盘（500G）装入原先的光驱位置。这几种材料都已经很常见，笔记本外观不会有什么瑕疵。
+系统安装
+1.下载ubuntu光盘镜像
+http://www.ubuntu.com/download。
+2.利用u盘安装
+此时，计算机已经没有光驱可用，利用UltraISO的“写入硬盘镜像”将ISO文件写入u盘中。
+3.安装
+大部分过程与普通安装方法一致，/挂载点分配20G，/home挂载点分配其他SSD容量，再新创建一个/store挂载点分配所有的机械硬盘容量。所有的分区格式都选ext4。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Ubuntu系统SSD硬盘优化全记录"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2012-01-15T06:06:38.000Z"><a href="/ssd-optimization-on-ubuntu.html">2012-01-15</a></time>
+      
+      
+  
+    <h1 class="title">Ubuntu系统SSD硬盘优化全记录</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3><strong>硬件改造</strong></h3>
+<p>固态硬盘（64G，2.5寸，SATA3.0）装入原先的硬盘位置，购买一个光驱位硬盘托架，将机械硬盘（500G）装入原先的光驱位置。这几种材料都已经很常见，笔记本外观不会有什么瑕疵。</p>
+<h3><strong>系统安装</strong></h3>
+<p>1.下载ubuntu光盘镜像</p>
+<p><a href="http://www.ubuntu.com/download"><a href="http://www.ubuntu.com/download">http://www.ubuntu.com/download</a></a>。</p>
+<p>2.利用u盘安装</p>
+<p>此时，计算机已经没有光驱可用，利用UltraISO的“写入硬盘镜像”将ISO文件写入u盘中。</p>
+<p>3.安装</p>
+<p>大部分过程与普通安装方法一致，<code>/</code>挂载点分配20G，<code>/home</code>挂载点分配其他SSD容量，再新创建一个<code>/store</code>挂载点分配所有的机械硬盘容量。所有的分区格式都选ext4。</p>
+<span id="more"></span>
+
+<h3><strong>优化设置</strong></h3>
+<p>这部分重点介绍。</p>
+<p>1.使用<code>Ext4 without journaling</code>文件系统</p>
+<p>传统的SSD+Linux组合一般推荐Ext2文件系统，主要是考虑到Ext3、Ext4需要额外的记录日志，会缩短SSD使用寿命，而且新出现的TRIM技术在Ext2中有两个缺点：</p>
+<ul>
+<li><p>仅支持离线TRIM，换句话说文件系统必须只读挂载；</p>
+</li>
+<li><p>需要手动执行hdparm命令或wiper.sh脚本。</p>
+</li>
+</ul>
+<p>Ext4则没有这些限制，允许TRIM后台运行，并且日志记录功能可以手动关闭（没有日志的情况下，文件系统更容易损坏，如突然断电），如果你甘愿冒这样的风险，从而延长SSD使用寿命，值得一试。另外，许多测试中如：<a href="http://www.phoronix.com/scan.php?page=article&amp;amp;item=btrfs_linux31_ssd&amp;amp;num=1">Testing EXT4 &amp; Btrfs On A Serial ATA 3.0 SSD</a>，像Btrfs这样为SSD准备的文件系统不如Ext4速度快（用SSD不就为了快么）。</p>
+<p>所以，上面安装系统时，选择了Ext4系统，接下来需要关闭日志功能。</p>
+<p>首先，系统挂载时无法停用日志功能，所以需要进入刚才的U盘系统，利用root权限执行：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">tune2fs</span> -O<span class="regexp"> ^has_journal</span> /dev/sda1</div></code></pre></td></tr></table></figure>
+
+<p>即关闭<code>/dev/sda1</code>上的日志功能。</p>
+<p>然后，运行操作系统检测：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">e2fsck</span> -f /dev/sda1</div></code></pre></td></tr></table></figure>
+
+<p>不这样，文件系统可能会出错。</p>
+<p>最后，重启，进入SSD中的系统，检查是否设置成功：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">dmesg</span> | grep EXT4</div></code></pre></td></tr></table></figure>
+
+<p>如果出现：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line">EXT4-fs (sda1): mounted filesystem <span class="keyword">without</span> journal</div></code></pre></td></tr></table></figure>
+
+<p>说明设置成功。</p>
+<p>原来是：<code>mounted filesystem with ordered data mode</code></p>
+<p>如果需要再次开启日志功能，只要运行<code>tune2fs -O has_journal /dev/sda1</code>即可。</p>
+<p>2.开启TRIM功能</p>
+<p>TRIM是一种操作系统调度SSD块写入的方式。主要是因为同一个SSD的闪存单元频繁操作会磨损，影响使用寿命，区别于传统的机械硬盘处理删除数据。Linux内核自2.6.33开始支持TRIM。</p>
+<p>首先，检查内核版本是否支持TRIM：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">uname</span> -a</div></code></pre></td></tr></table></figure>
+
+<p>然后，检查SSD硬盘是否支持TRIM：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">hdparm</span> -I /dev/sda</div></code></pre></td></tr></table></figure>
+
+
+<p>如果显示比如（不同硬件可能不同提示）：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line">* Data <span class="operator"><span class="keyword">Set</span> Management TRIM supported</div></code></pre></td></tr></table></figure>
+
+<p>说明支持。</p>
+<p>这两个条件都满足，在<code>/etc/fstab</code>中将：</p>
+<p><code>/dev/sda1 / ext4 defaults</code>
+改为：</p>
+<p><code>/dev/sda1 / ext4 discard,defaults</code>
+分区、挂载点、已经存在的选项不一定一样。</p>
+<p>测试新的<code>fstab</code>文件：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">mount</span> -oremount /dev/sda1</div></code></pre></td></tr></table></figure>
+
+<p>然后挂载：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="attribute">mount</div></code></pre></td></tr></table></figure>
+
+<p>如果显示discard字样，说明成功，如：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line">/dev/sda1 on / <span class="typedef"><span class="keyword">type</span> ext4 <span class="container">(<span class="title">rw</span>,<span class="title">discard</span>)</span></span></div></code></pre></td></tr></table></figure>
+
+<p>3.swap空间处理</p>
+<p>对于大内存来说swap基本上都是空闲的，除非电脑进入休眠状态，系统会将内存内容转到swap中。有了SSD，开关机都在几秒中，对我来说swap没用，所以上面直接不分配swap空间。</p>
+<p>如果分配了也行，空间要小，而且通过设置<code>/proc/sys/vm/swappiness</code>里面的值，来减少swap换出量：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line">echo <span class="number">1</span> &gt; <span class="regexp">/proc/sys</span><span class="regexp">/vm/swappiness</span></div></code></pre></td></tr></table></figure>
+
+<p>0到100之间，值越大换出量越大。</p>
+<p>4.设置<code>noatime</code></p>
+<p>当访问文件时，系统会更新last-access这个文件/目录元数据，设置noatime后可以减少这种操作。</p>
+<p>将2步中的：</p>
+<p><code>/dev/sda1 / ext4 discard,defaults</code>
+改为：</p>
+<p><code>/dev/sda1 / ext4 noatime,discard,defaults</code>
+测试设置成功方法与上面一样。</p>
+<p>5.使用noop磁盘调度</p>
+<p>通常操作系统调度机械硬盘时会提供一些数据的物理位置，这样有利于机械硬盘优化寻道，但是对SSD没意义，所以采用noop磁盘调度，即简单发送请求，可以提高效率。</p>
+<p>可以通过以下命令查看调度方法：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line">cat /sys/b<span class="operator"><span class="keyword">lock</span>/sda/queue/scheduler</div></code></pre></td></tr></table></figure>
+
+<p>比如显示：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="attr_selector">[noop]</span> <span class="tag">deadline</span> <span class="tag">cfq</span></div></code></pre></td></tr></table></figure>
+
+<p>在<code>/etc/rc.local</code>中添加如下语句：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line">echo noop &gt; <span class="regexp">/sys/block</span><span class="regexp">/sda/queue</span><span class="regexp">/scheduler</div></code></pre></td></tr></table></figure>
+6.内存分区加速
+
+如果内存够大，可以用ramdisk的方式，将一些经常变化的位置如/tmp放入内存，加快速度，减少对SSD的访问。
+
+依然是加在<code>/etc/fstab</code>中：
+
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">tmpfs</span> /tmp tmpfs defaults,noatime,mode=<span class="number">1777</span> <span class="number">0</span> <span class="number">0</span></div><div class="line"><span class="title">tmpfs</span> /var/tmp tmpfs defaults,noatime,mode=<span class="number">1777</span> <span class="number">0</span> <span class="number">0</span></div><div class="line"><span class="title">tmpfs</span> /var/log tmpfs defaults,noatime,mode=<span class="number">1777</span> <span class="number">0</span> <span class="number">0</span></div></code></pre></td></tr></table></figure>
+
+<p>更新方法与2相同，记得将浏览器等程序的缓存目录设置到/tmp下。</p>
+<p>所有的配置完成后，效果如下：</p>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4452?filename=ubuntu_ssd.png" title="Ubuntu SSD"><img src="http://storage.live.com/items/9E87992F08CD005F!4452?filename=ubuntu_ssd.png" alt="Ubuntu SSD"></a>
+现在开机时间10秒左右。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/SSD/">SSD</a>, <a href="/tags/Ubuntu/">Ubuntu</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

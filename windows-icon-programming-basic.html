@@ -1,0 +1,315 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Windows 图标编程（基础知识） | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="最近有处理Windows可执行文件（PE）文件中图标资源的需求，所以研究了许多关于图标编程的问题，总结如下。
+发展历程
+Windows图标格式发展经历了这样几个阶段:
+1.Windows XP 之前，但是不算古老的时代（仅支持DDB格式），主要通过设备无关位图（DIB）来存储图标信息，尽管DIB已经支持Alpha通道（表示透明度），但是一般设备不允许对每个像素增加一个额外的字节用来存储透明信息，所以需要特别的方法来解决透明显示问题。即在正常色位图后，额外存储掩码位图，通过布尔运算将掩码中的与位于目标设备表面结合，达到透明显示的目的。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Windows 图标编程（基础知识）"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-01T08:37:52.000Z"><a href="/windows-icon-programming-basic.html">2011-05-01</a></time>
+      
+      
+  
+    <h1 class="title">Windows 图标编程（基础知识）</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近有处理Windows可执行文件（PE）文件中图标资源的需求，所以研究了许多关于图标编程的问题，总结如下。</p>
+<h3><strong>发展历程</strong></h3>
+<p>Windows图标格式发展经历了这样<a href="http://msdn.microsoft.com/zh-cn/magazine/cc546571.aspx" title="使用WIC对Windows Vista图标进行解码">几个阶段</a>:</p>
+<p>1.Windows XP 之前，但是不算古老的时代（仅支持DDB格式），主要通过设备无关位图（DIB）来存储图标信息，尽管DIB已经支持Alpha通道（表示透明度），但是一般设备不允许对每个像素增加一个额外的字节用来存储透明信息，所以需要特别的方法来解决透明显示问题。即在正常色位图后，额外存储掩码位图，通过布尔运算将掩码中的与位于目标设备表面结合，达到透明显示的目的。</p>
+<span id="more"></span>
+
+<p>彩色位图由背景部分（存0）和彩色部分组成，需要做XOR操作，故称XOR位图。掩码位图由背景部分（存1）和图标图案（存0）组成，需要做AND操作，故称AND位图。具体的的处理过程是这样的：</p>
+<ul>
+<li>当前背景与AND位图通过AND操作结合起来，背景上留下一个黑色的图标图案。</li>
+<li>当前背景与XOR位图通过XOR操作结合起来，图标就显示完成。
+一个图标中可以包含多个不同尺寸的DIB，以适应不同显示场景的需要。</li>
+</ul>
+<p>2.Windows XP需要支持质量更好的大图标，但是上述方法当图像尺寸变大，掩码位图的使用会产生明显的锯齿，粗糙的边缘， 于是XP引入Alpha通道，以实现阴影等效果。为了兼容性，这些图标仍然包含掩码位图，但不使用。</p>
+<p>3.Windows Vista对于显示的要求更高，DIB虽然运行效率较高，但是位图越大，存储空间浪费越多，于是选择利用PNG带代替DIB。为了兼容性，需要将BITMAPINFOHEADER中的biCompression改为<a href="http://msdn.microsoft.com/en-us/library/aa511280.aspx%22" title="Icons（MSDN文档）">BI_PNG</a>。</p>
+<h3><strong>图标格式</strong></h3>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4075?filename=icon_format.gif" title="Icon Format"><img src="http://storage.live.com/items/9E87992F08CD005F!4075?filename=icon_format.gif" alt="Icon Format"></a></p>
+<p><a href="http://blog.csdn.net/kilrogg/archive/2009/03/08/3964982.aspx" title="ICON结构解析（订正版）">结构说明</a>:</p>
+<table border="1" cellspacing="0" cellpadding="2">
+<tbody>
+<tr>
+<td>顺序号</td>
+<td>名称</td>
+<td>大小（单位：字节）</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>1</td>
+<td>文件头</td>
+<td>6</td>
+<td>说明本图标文件中包含几个图像文件。</td>
+</tr>
+<tr>
+<td>2</td>
+<td>图像信息</td>
+<td>16</td>
+<td>可能含有多个。如果是在PE文件中，图像偏移需要转换为PE资源节中的ICON资源ID。</td>
+</tr>
+<tr>
+<td>3</td>
+<td>图像位</td>
+<td>-</td>
+<td>可能含有多个。一般都会包含DIB数据头和图像数据两个部分，如果是PNG格式，则置DIB头中biCompression位为BI_PNG。</td>
+</tr>
+</tbody>
+</table>
+
+<p>具体数据结构可以<a href="http://msdn.microsoft.com/en-us/library/ms997538.aspx" title="Icons（MSDN文档95年版）">参看</a>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Windows/">Windows</a>, <a href="/tags/icon/">icon</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

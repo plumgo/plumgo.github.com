@@ -1,0 +1,542 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>C++ | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+
+<h2 class="archive-title tag">C++</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-10-09T07:00:27.000Z"><a href="/windows-folder-tracer-tool-foldertracer.html">2011-10-09</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/windows-folder-tracer-tool-foldertracer.html">FolderTracer：Windows文件夹行为跟踪工具</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近一段时间都在研究目录跟踪/监控的问题：</p>
+<p><a href="http://plumgo.cc/blog/2011/09/09/understanding-readdirectorychangew-theory/">[译]理解ReadDirectoryChangeW （理论部分）</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/12/understanding-readdirectorychangew-implementation/">[译]理解ReadDirectoryChangeW （实现部分）</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/16/understanding-windows-io-mode/">理解Windows I/O模型</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/23/ntfs-change-journal-detail/">NTFS Change Journal（USN Journal）详解</a></p>
+<p><a href="http://plumgo.cc/blog/2011/10/08/trace-folder-using-process-monitor/">用Process Monitor监控目录</a></p>
+<p>这一篇介绍我自己写的一个工具FolderTracer。</p>
+<p>首先，需要区别Trace（跟踪）和Monitor（监视）这两个动词，我认为Trace主要强调监视的长期和非入侵性，而Monitor侧重于观察细致和全面，Process Monitor就是这类，如果需要长期监控，恐怕此软件就会比较吃力（使用形式和开销都不能接受）。明确这个很重要，特别是在搜索英文资料，还有面对上面多种实现技术的选型的时候。</p>
+<p>然后，需求是，<strong>一段时间内监控用户指定的文件夹（一般是工作目录）中文件的创建，修改，访问，删除操作，当用户修改文件是，可以大致知道修改量有多少</strong>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/windows-folder-tracer-tool-foldertracer.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-16T07:47:29.000Z"><a href="/understanding-windows-io-mode.html">2011-09-16</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/understanding-windows-io-mode.html">理解Windows I/O模型</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>先前翻译了两篇关于<code>ReadDirectoryChangesW</code>使用的文章：</p>
+<p><a href="plumgo.cc/blog/2011/09/09/understanding-readdirectorychangew-theory/">[译]理解ReadDirectoryChangeW （理论部分）</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/12/understanding-readdirectorychangew-implementation/">[译]理解ReadDirectoryChangeW （实现部分）</a></p>
+<p>关于Windows I/O模型，脑袋里面全是问号，在网上搜集了一些资料，摘录整理如下。</p>
+<h3><strong>名词解释</strong></h3>
+<p><strong>同步</strong></p>
+<p>所谓同步，就是在发出一个功能调用时，在没有得到结果之前，该调用就不返回。按照这个定义，其实绝大多数函数都是同步调用。一般而言，我们在说同步、异步的时候，特指那些需要其他部件协作或者需要一定时间完成的任务。最常见的例子就是SendMessage。该函数发送一个消息给某个窗口，在对方处理完消息之前，这个函数不返回。当对方处理完毕以后，该函数才把消息处理函数所返回的LRESULT值返回给调用者。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/understanding-windows-io-mode.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-14T07:50:32.000Z"><a href="/unicode-and-cstring.html">2011-09-14</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/unicode-and-cstring.html">Unicode 与 CString</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在VS6中，<code>CString</code>使用<code>TCHAR</code>类型，也就是说，在ANSI程序中<code>CString</code>每个字只有8-bit，相应地，在Unicode程序中是16-bit。如果你不得不适应以前的程序，那太不走运了。某些情况下，编译Unicode程序，在所有的地方使用Unicode，并在进入流处理前，将字符转为8-bit，反过来读取流后需要转为Unicode。</p>
+<p>这并不总是坏事，例如，如果输入字符是UTF-7或UTF-8,编码，那么Unicode是事实上可以自然表示，只有传输层才关心8-bit字符。</p>
+<p>在VS.NET中，更有灵活性，除了CString，还有两个新的数据类型，即CStringA和CStringW，CStringA的字符保持8-bit，CStringW始终是Unicode，各自独立编译。</p>
+<p>常见的问题是，如何在Unicode程序中处理8-bit字符，或者在8-bit程序中处理Unicode字符。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/unicode-and-cstring.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-09T07:57:29.000Z"><a href="/understanding-readdirectorychangew-theory.html">2011-09-09</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/understanding-readdirectorychangew-theory.html">【译】理解ReadDirectoryChangeW （理论部分）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近需要在文件级别收集Trace信息，在网上没有找到合适的程序，于是决定自己写一个，其中涉及对文件夹的监控问题。这方面的资料很少，中文资料都是网站之间抄来抄去，干货有限。偶然间在blogspot上看到<a href="http://qualapps.blogspot.com/2010/05/understanding-readdirectorychangesw.html">一篇文章</a>很好，将主要内容翻译过来留作纪念，过两天再写一篇把我的Trace程序也拿出来晒晒。</p>
+<p>译文</p>
+<hr>
+<p>本文分为理论和实现两部分。</p>
+<p><a href="http://cid-e030bb50921fff08.skydrive.live.com/self.aspx/.Public/Blog%20Sample%20Code/ReadDirectoryChanges.zip">示例代码下载</a></p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/understanding-readdirectorychangew-theory.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-06-11T07:59:36.000Z"><a href="/cpp-serialization-method-comparison2-thrift.html">2011-06-11</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/cpp-serialization-method-comparison2-thrift.html">C++对象序列化方案对比（续:Thrift）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><a href="http://plumgo.cc/blog/2012/06/02/comparsion-of-cpp-serialization-method/">C++对象序列化方案对比</a>这篇文章，对比了Boost/MFC/Google ProtoBuf这三种序列化方案，本篇再来介绍一下来自Facebook的Thrift。</p>
+<h3><strong>简介</strong></h3>
+<p>Thrift是一个用于创建互操作性和可扩展性服务的框架，最初由Facebook贡献，用于解决系统间大数据量传输通信及不同语言环境之间的跨平台特性，可作为二进制的高性能通信中间件，支持数据（对象）序列化和多种类型的RPC服务。目前是Apache中的一个开源项目，遵循Apache2.0许可协议。</p>
+<p>从上面的介绍可以看出，Thrift可以完成的工作不单是对象序列化，还有XML-RPC。这里我们重点介绍对象序列化方面的问题。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/cpp-serialization-method-comparison2-thrift.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:21:27.000Z"><a href="/cpp-operator-overloading.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/cpp-operator-overloading.html">C++运算符重载</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在网上搜到一篇讲得很好，转过来并略加注释。</p>
+<hr>
+<p>C++中预定义的运算符的操作对象只能是基本数据类型。但实际上，对于许多用户自定义类型（例如类），也需要类似的运算操作。这时就必须在C++中重新定义这些运算符，赋予已有运算符新的功能，使它能够用于特定类型执行特定的操作。运算符重载的实质是函数重载，它提供了C++的可扩展性，也是C++最吸引人的特性之一。</p>
+<p>一些编程语言没有运算符重载的特性，如Java。这些语言的设计者认为：运算符重载会增加编程的复杂性；或者由于使用者功力的问题引起功能上的混淆；认为<code>a.add(b)</code>比<code>a+b</code>更加面向对象（这个有点牵强）。无论如何，这些理由从反面也可以提醒我们：在重载运算符的时候要注意语义，权衡实施的必要性。</p>
+<p>运算符重载是通过创建运算符函数实现的，运算符函数定义了重载的运算符将要进行的操作。运算符函数的定义与其他函数的定义类似，惟一的区别是运算符函数的函数名是由关键字<code>operator</code>和其后要重载的运算符符号构成的。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/cpp-operator-overloading.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:18:14.000Z"><a href="/visual-cpp-60-non-standard-collection.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/visual-cpp-60-non-standard-collection.html">Visual C++6.0未遵循标准部分</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Visual C++ 6.0无疑是相当时间内C++编程的首选IDE。但编译器产生年代的关系和MS的战略问题，较之同类，对C++标准的支持程度不够好，很容易给编程带来困惑和不必要的麻烦，这一篇就用来收集VC6中一些与标准C++有出入的地方，并不断更新。</p>
+<p>具体的解决问题办法可以去这里找：<a href="http://support.microsoft.com/?scid=ph;zh-cn;3003"><a href="http://support.microsoft.com/?scid=ph;zh-cn;3003">http://support.microsoft.com/?scid=ph;zh-cn;3003</a></a></p>
+<h3><strong><code>&lt;iostream&gt;</code>与<code>&lt;iostream.h&gt;</code></strong></h3>
+<p>较新的（相对于VC6产生的年代）C++标准反对把.h符号继续使用在标准头文件中，所以可以看到一般在较早的C/C++的标准中的标准库,如<code>time.h</code>在新标准中都有替代<code>ctime</code>。从功能角度来讲，<iostream.h>仅仅支持字符流，以全局函数声明；而<code>&lt;iostream&gt;</code>中都是以STL形式声明的，通用性更强。这也可以同时解释，为什么<code>&lt;iostream&gt;</code>需要<code>using namespace std;</code>来引入命名空间。另外，输入输出流的C++标准规范接口在一些微妙的细节上都已经改进，所以推荐使用<code>&lt;iostream&gt;</code>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/visual-cpp-60-non-standard-collection.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-13T08:27:06.000Z"><a href="/comparsion-of-cpp-serialization-method.html">2011-05-13</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/comparsion-of-cpp-serialization-method.html">C++对象序列化方案对比</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>序列化是将对象状态信息转换为可存储或传输的过程，序列化时，对象会将当前状态写入到临时或持久性的存储区。以后，可以通过从存储区中读取或反序列化对象的状态，重新创建该对象。</p>
+<p>对象序列化反序列化通常用于：</p>
+<ol>
+<li>将对象存储于硬盘上</li>
+<li>在网络上传送对象的字节序列</li>
+</ol>
+<p><a href="http://en.wikipedia.org/wiki/Serialization">Wiki介绍</a></p>
+ 
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/comparsion-of-cpp-serialization-method.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

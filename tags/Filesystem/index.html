@@ -1,0 +1,510 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Filesystem | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+
+<h2 class="archive-title tag">Filesystem</h2>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-11-03T06:33:31.000Z"><a href="/filebench-filesystem-storage-benchmark-tool.html">2011-11-03</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/filebench-filesystem-storage-benchmark-tool.html">Filebench：文件系统存储基准测试工具</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3><strong>介绍</strong></h3>
+<p>Filebench是一个文件系统和存储基准测试工具。支持：</p>
+<ol>
+<li>多种工作负载类型；</li>
+<li>预定义40多种负载，可以模拟邮件、web、文件、数据库服务器行为；</li>
+<li>通过Workload Model Language(WML)自定义工作负载；</li>
+<li>多进程和多线程负载；</li>
+<li>可设置的目录继承深度、宽度及文件大小，并符合统计分布；</li>
+<li>异步I/O操作和进程同步原语；</li>
+<li>集成吞吐量、延时、CPU使用系统调用的统计功能；</li>
+<li>运行于Linux，FreeBSD，Solaris等POSIX兼容的操作系统。</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/filebench-filesystem-storage-benchmark-tool.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-10-16T06:56:09.000Z"><a href="/monitor-linux-filesystem-using-inotify.html">2011-10-16</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/monitor-linux-filesystem-using-inotify.html">利用inotify获得Linux文件系统变化</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><a href="http://en.wikipedia.org/wiki/Inotify">inotify</a>是Linux内核自2.6.13版本开始支持的文件变化通知系统，用于实时跟踪Linux文件系统行为，目前主流的Linux发行版本都支持该工具。</p>
+<h3><strong>开始</strong></h3>
+<p>运行下面命令可以检查你的系统是否支持inotify：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">grep</span> <span class="comment">INOTIFY_USER</span> <span class="comment">/boot/config</span> <span class="literal">-</span><span class="comment">$(uname</span> <span class="literal">-</span><span class="comment">r)</div></code></pre></td></tr></table></figure>
+
+<p>如果能得到：<code>CONFIG_INOTIFY_USER=y</code>说明支持。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/monitor-linux-filesystem-using-inotify.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-10-09T07:00:27.000Z"><a href="/windows-folder-tracer-tool-foldertracer.html">2011-10-09</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/windows-folder-tracer-tool-foldertracer.html">FolderTracer：Windows文件夹行为跟踪工具</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近一段时间都在研究目录跟踪/监控的问题：</p>
+<p><a href="http://plumgo.cc/blog/2011/09/09/understanding-readdirectorychangew-theory/">[译]理解ReadDirectoryChangeW （理论部分）</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/12/understanding-readdirectorychangew-implementation/">[译]理解ReadDirectoryChangeW （实现部分）</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/16/understanding-windows-io-mode/">理解Windows I/O模型</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/23/ntfs-change-journal-detail/">NTFS Change Journal（USN Journal）详解</a></p>
+<p><a href="http://plumgo.cc/blog/2011/10/08/trace-folder-using-process-monitor/">用Process Monitor监控目录</a></p>
+<p>这一篇介绍我自己写的一个工具FolderTracer。</p>
+<p>首先，需要区别Trace（跟踪）和Monitor（监视）这两个动词，我认为Trace主要强调监视的长期和非入侵性，而Monitor侧重于观察细致和全面，Process Monitor就是这类，如果需要长期监控，恐怕此软件就会比较吃力（使用形式和开销都不能接受）。明确这个很重要，特别是在搜索英文资料，还有面对上面多种实现技术的选型的时候。</p>
+<p>然后，需求是，<strong>一段时间内监控用户指定的文件夹（一般是工作目录）中文件的创建，修改，访问，删除操作，当用户修改文件是，可以大致知道修改量有多少</strong>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/windows-folder-tracer-tool-foldertracer.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-10-08T07:33:27.000Z"><a href="/trace-folder-using-process-monitor.html">2011-10-08</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/trace-folder-using-process-monitor.html">用Process Monitor监控目录</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>利用之前<a href="http://plumgo.cc/blog/2011/09/09/understanding-readdirectorychangew-theory/">Windows API</a>的<a href="http://plumgo.cc/blog/2011/09/12/understanding-readdirectorychangew-implementation/">知识</a>，可以实现目录监控的功能，实际上我也实现了，但是如文中所述，当指定目录下操作过多时，会损失部分通知。多少算多呢，解压一个eclipse开发环境的压缩包到监控目录下，相当于短时间内在目标文件夹中创建了数千个文件，结果几乎任何信息都没收到，所以，原本的程序在这种情况下局限性还是很明显的。</p>
+<p>考虑到监控性能改进，还可以使用：</p>
+<ol>
+<li><p>分析<a href="http://plumgo.cc/blog/2010/09/23/ntfs-change-journal-detail">Change Journal</a>的办法，前提是系统开启了这个功能；</p>
+</li>
+<li><p>写Windows文件驱动，据说是个痛苦的过程；</p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/trace-folder-using-process-monitor.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-23T07:36:30.000Z"><a href="/ntfs-change-journal-detail.html">2011-09-23</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/ntfs-change-journal-detail.html">NTFS Change Journal（USN Journal）详解</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>还是那个文件监控的应用，发现使用Windows API<code>ReadDirectoryChangesW</code>还是不能满足要求，如果变化量大又密集时，丢失通知现象很严重。好在需要监控的大部分的Windows用户都转到NTFS系统，所以打算采用分析NTFS的Change Journal（更改日志）的方法实现监控功能。</p>
+<p>Change Journal这名字挺直白。</p>
+<p>很火的桌面搜索程序：<a href="http://www.voidtools.com/">Everything</a>就是利用了NTFS系统的这个特性，通过读取和监控USN（后面会讲）而不是扫描文件来构建索引，所以搜索速度飞快，看来这个东西很好用。但是，相关的资料却是很少，特别是系统级介绍，而且一会USN，一会Change Journal，晕啊，找到代码都不敢用，还是老老实实做功课吧，找到了微软原始的两篇论文，来好好研究一下这个Change Journal。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/ntfs-change-journal-detail.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-12T07:53:25.000Z"><a href="/understanding-readdirectorychangew-implementation.html">2011-09-12</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/understanding-readdirectorychangew-implementation.html">【译】理解ReadDirectoryChangeW （实现部分）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2><strong>获得文件夹句柄</strong></h2>
+<p>现在来看看实施<a href="http://plumgo.cc/blog/2011/09/21/understanding-readdirectorychangew-theory/">第一部分</a>中“平衡”解决方案细节。在阅读<code>ReadDirectoryChangesW</code>声明时，你会发现第一个参数是目录句柄<code>HANDLE</code>。你知道如何获得句柄吗？没有<code>OpenDirectory</code>方法，而且<code>CreateDirectory</code>不返回句柄，也就是说，目录必须打开<code>FILE_LIST_DIRECTORY</code>访问权，所以，可以使用<code>CreateFile</code>函数与<code>FILE_FLAG_BACKUP_SEMANTICS</code>标志，实现代码是这样的：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div></code></pre></td><td class="code"><pre><code><div class="line">HANDLE hDir = ::CreateFile(</div><div class="line">strDirectory,           <span class="comment">// pointer to the file name</span></div><div class="line">FILE_LIST_DIRECTORY,    <span class="comment">// access (read/write) mode</span></div><div class="line">FILE_SHARE_READ         <span class="comment">// share mode</span></div><div class="line">| FILE_SHARE_WRITE</div><div class="line">| FILE_SHARE_DELETE,</div><div class="line">NULL, <span class="comment">// security descriptor</span></div><div class="line">OPEN_EXISTING,         <span class="comment">// how to create</span></div><div class="line">FILE_FLAG_BACKUP_SEMANTICS <span class="comment">// file attributes</span></div><div class="line">| FILE_FLAG_OVERLAPPED,</div><div class="line">NULL);                 <span class="comment">// file with attributes to copy</span></div></code></pre></td></tr></table></figure>
+
+<p>更多信息可以参看MSDN的<a href="http://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx">文档</a>，<a href="http://msdn.microsoft.com/en-us/library/aa364399%28v=VS.85%29.aspx">这里</a>还讨论了文件让问权限。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/understanding-readdirectorychangew-implementation.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+    <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-09T07:57:29.000Z"><a href="/understanding-readdirectorychangew-theory.html">2011-09-09</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/understanding-readdirectorychangew-theory.html">【译】理解ReadDirectoryChangeW （理论部分）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近需要在文件级别收集Trace信息，在网上没有找到合适的程序，于是决定自己写一个，其中涉及对文件夹的监控问题。这方面的资料很少，中文资料都是网站之间抄来抄去，干货有限。偶然间在blogspot上看到<a href="http://qualapps.blogspot.com/2010/05/understanding-readdirectorychangesw.html">一篇文章</a>很好，将主要内容翻译过来留作纪念，过两天再写一篇把我的Trace程序也拿出来晒晒。</p>
+<p>译文</p>
+<hr>
+<p>本文分为理论和实现两部分。</p>
+<p><a href="http://cid-e030bb50921fff08.skydrive.live.com/self.aspx/.Public/Blog%20Sample%20Code/ReadDirectoryChanges.zip">示例代码下载</a></p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/understanding-readdirectorychangew-theory.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+  
+
+  <nav id="pagination">
+  
+  
+  <div class="clearfix"></div>
+</nav>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

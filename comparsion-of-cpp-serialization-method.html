@@ -1,0 +1,392 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>C++对象序列化方案对比 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="序列化是将对象状态信息转换为可存储或传输的过程，序列化时，对象会将当前状态写入到临时或持久性的存储区。以后，可以通过从存储区中读取或反序列化对象的状态，重新创建该对象。
+对象序列化反序列化通常用于：
+
+将对象存储于硬盘上
+在网络上传送对象的字节序列
+
+Wiki介绍">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="C++对象序列化方案对比"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-13T08:27:06.000Z"><a href="/comparsion-of-cpp-serialization-method.html">2011-05-13</a></time>
+      
+      
+  
+    <h1 class="title">C++对象序列化方案对比</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>序列化是将对象状态信息转换为可存储或传输的过程，序列化时，对象会将当前状态写入到临时或持久性的存储区。以后，可以通过从存储区中读取或反序列化对象的状态，重新创建该对象。</p>
+<p>对象序列化反序列化通常用于：</p>
+<ol>
+<li>将对象存储于硬盘上</li>
+<li>在网络上传送对象的字节序列</li>
+</ol>
+<p><a href="http://en.wikipedia.org/wiki/Serialization">Wiki介绍</a></p>
+ <span id="more"></span>
+
+<h2><strong>常见的C++序列化方案</strong></h2>
+<h3>Boost.Serialization</h3>
+<p>介绍：Boost.Serialization可以创建或重建程序中的等效结构，并保存为二进制数据、文本数据、XML或者有用户自定义的其他文件。该库具有以下吸引人的特性：</p>
+<ul>
+<li>代码可移植（实现仅依赖于ANSI C++）</li>
+<li>深度指针保存与恢复</li>
+<li>可以序列化STL容器和其他常用模版库</li>
+<li>数据可移植</li>
+<li>非入侵性</li>
+</ul>
+<p>使用：<a href="http://www.boost.org/doc/libs/1_45_0/libs/serialization/doc/tutorial.html">教程</a></p>
+<p><a href="http://www.boost.org/users/download/">下载</a>Boost库，并根据需要编译(Boost库涉及较广)。</p>
+<ol>
+<li>编写应用。</li>
+<li>依需求编写入侵式或非入侵式序列化方法</li>
+<li>支持STL容器类、指针、父子类的序列化</li>
+<li>为需要序列化的类添加序列化代码。</li>
+<li>初始化fstream</li>
+<li>需求初始化xml, text, binary存档</li>
+<li>写入对象，并关闭文件流</li>
+</ol>
+<h3>MFC Serialization</h3>
+<p>简介：Windows平台下可使用MFC中的序列化方法。MFC 对 CObject 类中的序列化提供内置支持。因此，所有从 CObject 派生的类都可利用 CObject 的序列化协议。（<a href="http://msdn.microsoft.com/en-us/library/6bz744w8(v=vs.80">MSDN中的介绍</a>.aspx)）</p>
+<p>使用：</p>
+<ul>
+<li><p>为VS项目添加MFC支持</p>
+</li>
+<li><p>设置项目属性</p>
+</li>
+<li>包含头文件</li>
+</ul>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="preprocessor"><span class="keyword">include</span> &lt;</span>afxwin.h&gt;</div><div class="line"><span class="preprocessor"><span class="keyword">include</span> &lt;</span>afxtempl.h&gt;</div></code></pre></td></tr></table></figure>
+
+<ol>
+<li>编写继承CObject的类</li>
+<li>实现序列化方法</li>
+</ol>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">void</span> Serialize(CArchive& ar);</div></code></pre></td></tr></table></figure>
+
+<ul>
+<li>添加序列化宏</li>
+</ul>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div></code></pre></td><td class="code"><pre><code><div class="line">//添加在声明类中</div><div class="line">DECLARE_SERIAL(basic_pojo_mfc)</div><div class="line">//<span class="keyword">...</span></div><div class="line">//添加在实现文件中</div><div class="line">IMPLEMENT_SERIAL(MyObject, CObject, <span class="number">1</span>)</div></code></pre></td></tr></table></figure>
+
+<ol>
+<li>编写序列化与反序列化的对象</li>
+<li>创建CFile，CArchive对象</li>
+<li>写入对象，关闭资源</li>
+</ol>
+<h3>Google Protocol Buffers</h3>
+<p>简介：Google Protocol Buffers (GPB)是Google内部是用的数据编码方式，旨在用来代替XML进行数据交换。可用于数据序列化与反序列化。主要特性有：
+<em>  高效
+</em>  语言中立（Cpp, Java, Python）
+*  可扩展</p>
+<p><a href="http://code.google.com/apis/protocolbuffers/docs/overview.html">官方文档</a></p>
+<p>使用：
+<em>   <a href="http://code.google.com/p/protobuf/">下载</a>GPB，并编译出需要使用的库。
+</em>   编写.proto文件，并编译出.cc与.h文件。
+<em>   依<a href="http://code.google.com/apis/protocolbuffers/docs/proto.html">规则</a>编写.proto
+</em>   编译</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="title">protoc</span> -I=<span class="variable">$SRC_DIR</span> --cpp_out=<span class="variable">$DST_DIR</span> <span class="variable">$SRC_DIR</span>/addressbook.proto</div></code></pre></td></tr></table></figure>
+
+<ul>
+<li>编写序列化与反序列化代码。</li>
+</ul>
+<h2><strong>比较</strong></h2>
+<h3>测试用例介绍</h3>
+<ol>
+<li>比较维度：</li>
+<li>序列化与反序列化消耗的时间</li>
+<li>产生数据文件大小</li>
+<li>测试数据类型：</li>
+</ol>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">//基本数据类型 class basic_pojo { </span></div><div class="line"><span class="keyword">public</span> :</div><div class="line">    <span class="keyword">char</span> char8;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> uchar8;</div><div class="line">    <span class="keyword">short</span> short16;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">short</span> ushort16;</div><div class="line">    <span class="keyword">int</span> int32;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">int</span> uint32;</div><div class="line">    <span class="keyword">long</span> long32;</div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">long</span> ulong32;</div><div class="line">    <span class="keyword">float</span> float32;</div><div class="line">    <span class="keyword">double</span> double64;</div><div class="line">    <span class="keyword">bool</span> bool8;</div><div class="line">};</div></code></pre></td></tr></table></figure>
+
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="regexp">//</span>复合数据类型 <span class="class"><span class="keyword">class</span> <span class="title">complex_pojo</span> { </span></div><div class="line">public :</div><div class="line">    string string_stl;</div><div class="line">    basic_pojo_boost basic_class;</div><div class="line">};</div></code></pre></td></tr></table></figure>
+
+
+<h3><a href="http://code.google.com/p/plumgo/downloads/detail?name=serialization_1.0.zip&amp;amp;can=2&amp;amp;q=">测试代码</a></h3>
+<h2><strong>结果</strong></h2>
+<ol>
+<li>序列化与反序列化消耗的时间：</li>
+</ol>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4050?filename=serialize01.jpg" title="Serialize01"><img src="http://storage.live.com/items/9E87992F08CD005F!4050?filename=serialize01.jpg" alt="Serialize01"></a></p>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4051?filename=serialize02.jpg" title="Serialize02"><img src="http://storage.live.com/items/9E87992F08CD005F!4051?filename=serialize02.jpg" alt="Serialize02"></a></p>
+<ol>
+<li>产生数据文件大小：</li>
+</ol>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4052?filename=serialize03.jpg" title="Serialize03"><img src="http://storage.live.com/items/9E87992F08CD005F!4052?filename=serialize03.jpg" alt="Serialize03"></a></p>
+<ol>
+<li>数据：</li>
+</ol>
+<table border="1" cellspacing="0" cellpadding="1">
+<tbody><tr><td>_</td>
+<td>Protocol Buffers</td>
+<td>Boost.Serialization</td>
+<td>MFC:Serialization</td></tr>
+<tr><td>Serialization(ms)</td>
+<td>94</td>
+<td>219</td>
+<td>1218</td></tr>
+<tr><td>Unserialization(ms)</td>
+<td>203</td><td>296</td><td>1282</td></tr>
+<tr><td>Archive Size(KB)</td><td>4590</td><td>4493</td><td>5372</td></tr></tbody></table>
+
+<h2><strong>结论</strong></h2>
+<ol>
+<li>Google Protocol Buffers效率较高，但是数据对象必须预先定义，并使用protoc编译，适合要求效率，允许自定义类型的内部场合使用。</li>
+<li>Boost.Serialization 使用灵活简单，而且支持标准C++容器。</li>
+<li>相比而言，MFC的效率较低，但是结合MSVS平台使用最为方便。</li>
+<li>希望有时间补充更多的序列化方案及测试指标。</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C%2B%2B/">C++</a>, <a href="/tags/Boost/">Boost</a>, <a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a>, <a href="/tags/Serialization/">Serialization</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

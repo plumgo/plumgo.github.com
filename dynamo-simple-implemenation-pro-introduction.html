@@ -1,0 +1,329 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Dynamo精简实现系统：PRO（简介） | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="Dynamo简介
+Dynamo是一个高可用，专有的键值结构化存储系统，或分布式存储系统。它同时具有数据库和分布式哈希表（DHTs）的特征，并不直接暴露在外网，而是为Amazon Web Services(AWS)提供底层支持。
+更多准确信息可以直接参看Dynamo论文。
+论文本身并没有提出什么新的思想，正如论文中所说，其贡献在于把非常多的技术结合到一起，来完成一个工业场景下的系统。早在2000年的时候Brewer教授就告诉我们分布式系统的CAP原则，分布式系统不可避免的会遇到如下问题：
+
+一致性（Consistency）
+可用性（Availability）
+分区容错性（Partition tolerance）">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Dynamo精简实现系统：PRO（简介）"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-22T08:24:44.000Z"><a href="/dynamo-simple-implemenation-pro-introduction.html">2011-05-22</a></time>
+      
+      
+  
+    <h1 class="title">Dynamo精简实现系统：PRO（简介）</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2><strong>Dynamo简介</strong></h2>
+<p>Dynamo是一个高可用，专有的键值结构化存储系统，或分布式存储系统。它同时具有数据库和分布式哈希表（DHTs）的特征，并不直接暴露在外网，而是为Amazon Web Services(AWS)提供底层支持。</p>
+<p>更多准确信息可以直接参看<a href="http://s3.amazonaws.com/AllThingsDistributed/sosp/amazon-dynamo-sosp2007.pdf">Dynamo论文</a>。</p>
+<p>论文本身并没有提出什么新的思想，正如论文中所说，其贡献在于把非常多的技术结合到一起，来完成一个工业场景下的系统。早在2000年的时候Brewer教授就告诉我们分布式系统的CAP原则，分布式系统不可避免的会遇到如下问题：</p>
+<ol>
+<li>一致性（Consistency）</li>
+<li>可用性（Availability）</li>
+<li>分区容错性（Partition tolerance）</li>
+</ol>
+<span id="more"></span>
+
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4218?filename=cap.jpg" title="CAP"><img src="http://storage.live.com/items/9E87992F08CD005F!4218?filename=cap.jpg" alt="CAP"></a></p>
+<p>任何分布式系统只可能同时满足以上两者，无法兼顾第三者。所以忠告架构师不要将精力浪费在设计如何能满足三者的完美分布式系统，而是应该放在取舍上。Dynamo使用了自己的取舍策略（NRW），在Amazon业务中的表现也证实了其过人之处，所以分析其实现方法的意义也就不言而喻了。</p>
+<p>目前Dynamo已经有很多实现，典型的有：</p>
+<ol>
+<li><a href="http://cassandra.apache.org/">Apache Cassandra</a></li>
+<li><a href="http://sna-projects.com/sna/">Project Voldemort</a></li>
+<li><a href="https://github.com/basho/riak">Riak</a></li>
+</ol>
+<p>这一篇，来介绍一个精简的Dynamo实现：PRO。</p>
+<h2><strong>PRO关键技术</strong></h2>
+<p><a href="http://pages.cs.wisc.edu/~markus/739/pro.pdf">PRO</a>是一个具有一致性和容错性的分布式键值存储系统。其设计在很多方面都类似于Amazon的Dynamo系统，这些特性包括：</p>
+<ol>
+<li>一致性哈希（consistent hashing）</li>
+<li>持久化客户端（Persistent client）</li>
+<li>心跳检测（heartbeats）</li>
+<li>反熵（anti-entropy）</li>
+</ol>
+<h3><strong>一致性哈希</strong></h3>
+<p>一致性哈希有多种实现算法，关键的问题在于如何定义数据分割策略和节点快速查询。</p>
+<p>Chord算法是最为经典的实现：</p>
+<ul>
+<li><p>定位：网络中每个节点分配一个唯一的ID，这个是网络发现的基础。假设整个网络有N个节点，并且网络是呈环状。两个节点间的距离定义为每个节点会存储一张路由表，表内顺时针按照离本节点2、4、8、16、32的距离选定其他节点的IP信息来记录。</p>
+</li>
+<li><p>存储：数据被按照一定的规则切割，每份数据也有一个独立ID（查询Key），并且和节点ID值域是一样的。然后查找节点，如果存在和数据ID一样的节点ID，则将这份数据存在该节点上；如果不存在，则存储到离该数据ID距离最近的节点上。同时，为了保证数据的可靠性，会顺时针往下查找K个冗余节点，存储这份数据。</p>
+</li>
+<li><p>查询：先从自己的路由表中，找到一个和数据ID距离最近，并存活在网络中的节点Next。如果该节点的ID正好和数据ID相等则返回，否则递归查询next，这个次数可以被证明小于等于log2N的。</p>
+</li>
+<li><p>扩充：新增一个节点i，需要预先知道网络中已经存活的一个节点j，然后通过和节点j交互，更新自己和其他节点的路由表，并需要距离自己最近的数据复制过来，提供数据服务。相应地，如果损失一个节点，路由算法会自动跳过这个节点，依靠数据冗余来继续提供服务。</p>
+</li>
+</ul>
+<p>PRO中也是基于Chord算法，使用一致性哈希来解决服务器之间负载均衡问题，每个服务器拥有一定数量的段（segments），这些段平局分布在一个逻辑上的哈希环上。为了定位方面，使用服务器IP地址，端口号，段索引号的哈希值作为ID值，让每个服务器中的段独立于IP与端口号。当一个键值对被存储到系统中，大于或等于主存储节点的顺时针方向的下一节点将会作为辅助节点存储数据。这里利用MD5计算服务器地址、端口来保证哈希环中位置的随机性。</p>
+<p>在每次读数据时，无论是在主存储节点还是辅助存储节点读到数据，都立即返回。如果主次节点都在运行，写入的所有数据都要存放，否则写入操作可能只在部分节点上存放。如果有节点失效，数据将无法被复制，但是依然可以被访问，如果主次节点都没有响应，那么客户端无法接收到结果。</p>
+<h3><strong>持久化客户端</strong></h3>
+<p>PRO的客户端包括客户端和客户端守护程序，这两个程序被设计为在同一计算机上，客户端守护程序来维护和跟踪节点信息（是否可用）。另外，守护进程还担任选择正确的节点并发送请求的任务，这些请求是用HTTP协议与服务器通信。</p>
+<h3><strong>心跳检测</strong></h3>
+<p>为了让每个服务器明确哈希环中其他服务器是否可用，每个服务器都有一份其他服务器信息，并且周期性的彼此通信，如果某服务器长时间没有反应，说明已经下线，不应该将此服务器列入可用节点。这个机制称为心跳检测。</p>
+<p>心跳检测信号使用UDP协议，无论其他服务器是否被认为下线，服务器将定期向所有服务器发送检测信号（每0.5s），如果一段时间内（每1.25s）没有收到某服务器的确认信号，那么这个服务器被标为“下线”，并且重新更新段表，停止下线服务器的工作。</p>
+<h3><strong>反熵系统</strong></h3>
+<p>反熵系统用来修正偶尔出现数据不一致的矛盾，尤其是在两种情况下：</p>
+<ol>
+<li><p>当一个服务器上线，会收到一些段信息，并作为主节点或者次节点开始存储工作，这时就可能与原先也存储此段信息的服务器产生数据不一致的问题。需要利用反熵系统对数据进行统一。</p>
+</li>
+<li><p>系统主节点经常需要发送信息到次节点，这样也可能产生数据不一致。反熵系统周期性（每10s）调用对主次节点上的信息进行统一。</p>
+</li>
+</ol>
+<p>反熵系统总是由次节点开始收集所有的副本信息，每个数据信息都包含一个版本信息，统一到较新的版本。如果版本相同，通过比较它们的时间戳进行操作。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Dynamo/">Dynamo</a>, <a href="/tags/PRO/">PRO</a>, <a href="/tags/Consistent-Hash/">Consistent Hash</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

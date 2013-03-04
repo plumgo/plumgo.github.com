@@ -1,0 +1,298 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Visual C++6.0未遵循标准部分 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="Visual C++ 6.0无疑是相当时间内C++编程的首选IDE。但编译器产生年代的关系和MS的战略问题，较之同类，对C++标准的支持程度不够好，很容易给编程带来困惑和不必要的麻烦，这一篇就用来收集VC6中一些与标准C++有出入的地方，并不断更新。
+具体的解决问题办法可以去这里找：http://support.microsoft.com/?scid=ph;zh-cn;3003
+&lt;iostream&gt;与&lt;iostream.h&gt;
+较新的（相对于VC6产生的年代）C++标准反对把.h符号继续使用在标准头文件中，所以可以看到一般在较早的C/C++的标准中的标准库,如time.h在新标准中都有替代ctime。从功能角度来讲，仅仅支持字符流，以全局函数声明；而&lt;iostream&gt;中都是以STL形式声明的，通用性更强。这也可以同时解释，为什么&lt;iostream&gt;需要using namespace std;来引入命名空间。另外，输入输出流的C++标准规范接口在一些微妙的细节上都已经改进，所以推荐使用&lt;iostream&gt;。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="Visual C++6.0未遵循标准部分"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:18:14.000Z"><a href="/visual-cpp-60-non-standard-collection.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title">Visual C++6.0未遵循标准部分</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Visual C++ 6.0无疑是相当时间内C++编程的首选IDE。但编译器产生年代的关系和MS的战略问题，较之同类，对C++标准的支持程度不够好，很容易给编程带来困惑和不必要的麻烦，这一篇就用来收集VC6中一些与标准C++有出入的地方，并不断更新。</p>
+<p>具体的解决问题办法可以去这里找：<a href="http://support.microsoft.com/?scid=ph;zh-cn;3003"><a href="http://support.microsoft.com/?scid=ph;zh-cn;3003">http://support.microsoft.com/?scid=ph;zh-cn;3003</a></a></p>
+<h3><strong><code>&lt;iostream&gt;</code>与<code>&lt;iostream.h&gt;</code></strong></h3>
+<p>较新的（相对于VC6产生的年代）C++标准反对把.h符号继续使用在标准头文件中，所以可以看到一般在较早的C/C++的标准中的标准库,如<code>time.h</code>在新标准中都有替代<code>ctime</code>。从功能角度来讲，<iostream.h>仅仅支持字符流，以全局函数声明；而<code>&lt;iostream&gt;</code>中都是以STL形式声明的，通用性更强。这也可以同时解释，为什么<code>&lt;iostream&gt;</code>需要<code>using namespace std;</code>来引入命名空间。另外，输入输出流的C++标准规范接口在一些微妙的细节上都已经改进，所以推荐使用<code>&lt;iostream&gt;</code>。</p>
+<span id="more"></span>
+
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">//遵从标准</span></div><div class="line">&lt;iostream&gt; <span class="comment">//使用标记命名空间</span></div><div class="line"><span class="keyword">using</span> <span class="class"><span class="keyword">namespace</span> <span class="title">std</span>;</div><div class="line">//不遵从标准</div><div class="line">&<span class="title">lt</span>;<span class="title">iostream</span>.<span class="title">h</span>&<span class="title">gt</span>;</div><div class="line">//其他的例子</div><div class="line">&<span class="title">lt</span>;<span class="title">string</span> .<span class="title">h</span>&<span class="title">gt</span>; //旧的<span class="title">C</span>语言头文件，对应基于<span class="title">char</span>*的字符串处理函数</div><div class="line">&<span class="title">lt</span>;<span class="title">string</span>&<span class="title">gt</span>;    //包装了<span class="title">std</span>的<span class="title">C</span>++头文件，对应于新的<span class="title">string</span>类</div><div class="line">&<span class="title">lt</span>;<span class="title">cstring</span>&<span class="title">gt</span>;  //是对应就<span class="title">C</span>语言头文件的<span class="title">std</span>版本</div></code></pre></td></tr></table></figure>
+
+<h3><strong><code>&lt;&lt;</code> <code>&gt;&gt;</code>不能声明友元函数</strong></h3>
+<p>声明重载运算符<code>&lt;&lt;</code>或者<code>&gt;&gt;</code>为某个类友元，而后在函数中访问类中数据成员，会报错<code>error C2248: &#39;var&#39; : cannot access private member declared in class &#39;Clazz&#39;</code>，这个问题不是遵不遵从标准的问题，可以算是bug了。</p>
+<p>解决办法有：</p>
+<ol>
+<li>不使用友元函数，由类提供数据成员访问接口，如：GetVar()，这样可能会产生性能问题，需要将函数写成内联函数。</li>
+<li><p>将友元函数的定义放到类里。</p>
+<p>不支持模板类分离实现
+需要把.cpp中的声明和定义都放在.h中，另外类声明的时候只需要声明一次模板参数。</p>
+<p>更具体内容参看：<a href="http://support.microsoft.com/kb/239436"><a href="http://support.microsoft.com/kb/239436">http://support.microsoft.com/kb/239436</a></a></p>
+<h3><strong>变量在for循环中的作用域</strong></h3>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">for</span>(int <span class="built_in">i</span> = <span class="number">0</span>; <span class="built_in">i</span> &lt; <span class="number">10</span>; ++<span class="built_in">i</span>) <span class="cell">{}</span></div></code></pre></td></tr></table></figure>
+
+</li>
+</ol>
+<p>在VC6中，上面语句中的i变量会在声明后一直存在，而新标准中会随for作用域结束后销毁。</p>
+<h3><strong>默认类型为int</strong></h3>
+<p>在VC6中如果不写类型，如const x = 0;会默认将x设置为int，而在新的标准中需要显示指定数据类型。</p>
+<p><strong>资源</strong>
+这推荐几个C++在线编译器，可以随时测试自己的代码是否能在某个编译器中编译成功。</p>
+<p><a href="http://www.dinkumware.com/exam/default.aspx"><a href="http://www.dinkumware.com/exam/default.aspx">http://www.dinkumware.com/exam/default.aspx</a></a></p>
+<p><a href="http://www.comeaucomputing.com/tryitout/"><a href="http://www.comeaucomputing.com/tryitout/">http://www.comeaucomputing.com/tryitout/</a></a></p>
+<p><a href="http://code.vcer.net/"><a href="http://code.vcer.net/">http://code.vcer.net/</a></a></p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C%2B%2B/">C++</a>, <a href="/tags/Windows/">Windows</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

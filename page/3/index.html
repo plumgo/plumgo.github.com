@@ -1,0 +1,621 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>Page 3 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-12T07:53:25.000Z"><a href="/understanding-readdirectorychangew-implementation.html">2011-09-12</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/understanding-readdirectorychangew-implementation.html">【译】理解ReadDirectoryChangeW （实现部分）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2><strong>获得文件夹句柄</strong></h2>
+<p>现在来看看实施<a href="http://plumgo.cc/blog/2011/09/21/understanding-readdirectorychangew-theory/">第一部分</a>中“平衡”解决方案细节。在阅读<code>ReadDirectoryChangesW</code>声明时，你会发现第一个参数是目录句柄<code>HANDLE</code>。你知道如何获得句柄吗？没有<code>OpenDirectory</code>方法，而且<code>CreateDirectory</code>不返回句柄，也就是说，目录必须打开<code>FILE_LIST_DIRECTORY</code>访问权，所以，可以使用<code>CreateFile</code>函数与<code>FILE_FLAG_BACKUP_SEMANTICS</code>标志，实现代码是这样的：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div></code></pre></td><td class="code"><pre><code><div class="line">HANDLE hDir = ::CreateFile(</div><div class="line">strDirectory,           <span class="comment">// pointer to the file name</span></div><div class="line">FILE_LIST_DIRECTORY,    <span class="comment">// access (read/write) mode</span></div><div class="line">FILE_SHARE_READ         <span class="comment">// share mode</span></div><div class="line">| FILE_SHARE_WRITE</div><div class="line">| FILE_SHARE_DELETE,</div><div class="line">NULL, <span class="comment">// security descriptor</span></div><div class="line">OPEN_EXISTING,         <span class="comment">// how to create</span></div><div class="line">FILE_FLAG_BACKUP_SEMANTICS <span class="comment">// file attributes</span></div><div class="line">| FILE_FLAG_OVERLAPPED,</div><div class="line">NULL);                 <span class="comment">// file with attributes to copy</span></div></code></pre></td></tr></table></figure>
+
+<p>更多信息可以参看MSDN的<a href="http://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx">文档</a>，<a href="http://msdn.microsoft.com/en-us/library/aa364399%28v=VS.85%29.aspx">这里</a>还讨论了文件让问权限。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/understanding-readdirectorychangew-implementation.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-09T07:57:29.000Z"><a href="/understanding-readdirectorychangew-theory.html">2011-09-09</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/understanding-readdirectorychangew-theory.html">【译】理解ReadDirectoryChangeW （理论部分）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>最近需要在文件级别收集Trace信息，在网上没有找到合适的程序，于是决定自己写一个，其中涉及对文件夹的监控问题。这方面的资料很少，中文资料都是网站之间抄来抄去，干货有限。偶然间在blogspot上看到<a href="http://qualapps.blogspot.com/2010/05/understanding-readdirectorychangesw.html">一篇文章</a>很好，将主要内容翻译过来留作纪念，过两天再写一篇把我的Trace程序也拿出来晒晒。</p>
+<p>译文</p>
+<hr>
+<p>本文分为理论和实现两部分。</p>
+<p><a href="http://cid-e030bb50921fff08.skydrive.live.com/self.aspx/.Public/Blog%20Sample%20Code/ReadDirectoryChanges.zip">示例代码下载</a></p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/understanding-readdirectorychangew-theory.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-06-11T07:59:36.000Z"><a href="/cpp-serialization-method-comparison2-thrift.html">2011-06-11</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/cpp-serialization-method-comparison2-thrift.html">C++对象序列化方案对比（续:Thrift）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p><a href="http://plumgo.cc/blog/2012/06/02/comparsion-of-cpp-serialization-method/">C++对象序列化方案对比</a>这篇文章，对比了Boost/MFC/Google ProtoBuf这三种序列化方案，本篇再来介绍一下来自Facebook的Thrift。</p>
+<h3><strong>简介</strong></h3>
+<p>Thrift是一个用于创建互操作性和可扩展性服务的框架，最初由Facebook贡献，用于解决系统间大数据量传输通信及不同语言环境之间的跨平台特性，可作为二进制的高性能通信中间件，支持数据（对象）序列化和多种类型的RPC服务。目前是Apache中的一个开源项目，遵循Apache2.0许可协议。</p>
+<p>从上面的介绍可以看出，Thrift可以完成的工作不单是对象序列化，还有XML-RPC。这里我们重点介绍对象序列化方面的问题。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/cpp-serialization-method-comparison2-thrift.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-06-10T08:02:14.000Z"><a href="/j2me-game-engine-suddenschool-architecture.html">2011-06-10</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/j2me-game-engine-suddenschool-architecture.html">J2ME 游戏引擎 之 [学院惊变]程序框架</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>2010年10月受朋友之托编写一个手机游戏，他们提供美工素材。接到任务后开始学习J2ME开发，了解了J2ME游戏开发的基本套路，并断断续续编写程序，直到11年1月底完成这个叫[学院惊变]的游戏。</p>
+<p>学院惊变是一款使用J2ME编写的横版过关游戏，主人公可以进行走、跳、蹲、打等动作；怪物根据自己的位置状态有各种行为如飞行、爆炸、闪躲、攻击阻止主人公前进；游戏共分3关场景分别是教室、地下室、操场，不同场景都会遇到不同的怪物；当然游戏过场与菜单等通用UI元素都是必须有的。</p>
+<p>这里记录一下游戏框架备忘。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/j2me-game-engine-suddenschool-architecture.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-26T08:08:37.000Z"><a href="/dynamo-simple-implemenation-pro-deployment.html">2011-05-26</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/dynamo-simple-implemenation-pro-deployment.html">Dynamo精简实现系统：PRO（部署）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>上面两篇分别介绍了<a href="http://plumgo.cc/blog/2011/05/22/dynamo-simple-implemenation-pro-introduction/">PRO的基本理论</a>、<a href="http://plumgo.cc/blog/2011/05/25/dynamo-simple-implemenation-pro-compilation/">编译及系统基本结构</a>，这里再介绍构建一个虚拟集群环境部署系统。</p>
+<h3><strong>虚拟网络环境</strong></h3>
+<p>利用VirtualBox安装3个Ubuntu Server 10.10作为服务器，之前用到的Ubuntu Desktop作为客户端，再将这4台虚拟计算机配置成一个虚拟局域网络，为了方面安装依赖包，同时要求每台计算机都可以访问互联网。下面说明如何利用VirtualBox构建一个虚拟网络来部署PRO，当然了解<a href="http://plumgo.cc/blog/2011/05/10/virtualbox-tutorial-2-network-setting/">VirtualBox的网络设置</a>是必须的。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/dynamo-simple-implemenation-pro-deployment.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-25T08:14:39.000Z"><a href="/dynamo-simple-implemenation-pro-compilation.html">2011-05-25</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/dynamo-simple-implemenation-pro-compilation.html">Dynamo精简实现系统：PRO（编译）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h3><strong>编译环境</strong></h3>
+<p>首先利用VirtualBox<a href="http://plumgo.cc/blog/2011/05/10/virtualbox-tutorial-1-basic/">构建虚拟机</a>，安装自己用起来顺手的Linux发行版，这里用的是Ubuntu 10.10 Desktop。打开PRO代码目录，看到有Makefile文件，启动终端运行make，程序编译成功！生成<code>server</code>, <code>clientd</code>, <code>client</code>三个程序。通过阅读唯一的文档README，得知：</p>
+<ol>
+<li><p>服务器端程序（server）需要一个<code>server.conf</code>文件按顺序存放其他服务器的IP地址和端口信息，运行不需要参数；</p>
+</li>
+<li><p>客户端守护程序（clientd）也需要一个<code>server.txt</code>记录所有服务器的IP与端口信息，运行不需要参数；</p>
+</li>
+<li><p>客户端程序（client）通过提供参数 <code>–k KEY [-v VALUE]</code>，实现键值存储的功能。</p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/dynamo-simple-implemenation-pro-compilation.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:21:27.000Z"><a href="/cpp-operator-overloading.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/cpp-operator-overloading.html">C++运算符重载</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在网上搜到一篇讲得很好，转过来并略加注释。</p>
+<hr>
+<p>C++中预定义的运算符的操作对象只能是基本数据类型。但实际上，对于许多用户自定义类型（例如类），也需要类似的运算操作。这时就必须在C++中重新定义这些运算符，赋予已有运算符新的功能，使它能够用于特定类型执行特定的操作。运算符重载的实质是函数重载，它提供了C++的可扩展性，也是C++最吸引人的特性之一。</p>
+<p>一些编程语言没有运算符重载的特性，如Java。这些语言的设计者认为：运算符重载会增加编程的复杂性；或者由于使用者功力的问题引起功能上的混淆；认为<code>a.add(b)</code>比<code>a+b</code>更加面向对象（这个有点牵强）。无论如何，这些理由从反面也可以提醒我们：在重载运算符的时候要注意语义，权衡实施的必要性。</p>
+<p>运算符重载是通过创建运算符函数实现的，运算符函数定义了重载的运算符将要进行的操作。运算符函数的定义与其他函数的定义类似，惟一的区别是运算符函数的函数名是由关键字<code>operator</code>和其后要重载的运算符符号构成的。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/cpp-operator-overloading.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:18:14.000Z"><a href="/visual-cpp-60-non-standard-collection.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/visual-cpp-60-non-standard-collection.html">Visual C++6.0未遵循标准部分</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>Visual C++ 6.0无疑是相当时间内C++编程的首选IDE。但编译器产生年代的关系和MS的战略问题，较之同类，对C++标准的支持程度不够好，很容易给编程带来困惑和不必要的麻烦，这一篇就用来收集VC6中一些与标准C++有出入的地方，并不断更新。</p>
+<p>具体的解决问题办法可以去这里找：<a href="http://support.microsoft.com/?scid=ph;zh-cn;3003"><a href="http://support.microsoft.com/?scid=ph;zh-cn;3003">http://support.microsoft.com/?scid=ph;zh-cn;3003</a></a></p>
+<h3><strong><code>&lt;iostream&gt;</code>与<code>&lt;iostream.h&gt;</code></strong></h3>
+<p>较新的（相对于VC6产生的年代）C++标准反对把.h符号继续使用在标准头文件中，所以可以看到一般在较早的C/C++的标准中的标准库,如<code>time.h</code>在新标准中都有替代<code>ctime</code>。从功能角度来讲，<iostream.h>仅仅支持字符流，以全局函数声明；而<code>&lt;iostream&gt;</code>中都是以STL形式声明的，通用性更强。这也可以同时解释，为什么<code>&lt;iostream&gt;</code>需要<code>using namespace std;</code>来引入命名空间。另外，输入输出流的C++标准规范接口在一些微妙的细节上都已经改进，所以推荐使用<code>&lt;iostream&gt;</code>。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/visual-cpp-60-non-standard-collection.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-22T08:24:44.000Z"><a href="/dynamo-simple-implemenation-pro-introduction.html">2011-05-22</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/dynamo-simple-implemenation-pro-introduction.html">Dynamo精简实现系统：PRO（简介）</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2><strong>Dynamo简介</strong></h2>
+<p>Dynamo是一个高可用，专有的键值结构化存储系统，或分布式存储系统。它同时具有数据库和分布式哈希表（DHTs）的特征，并不直接暴露在外网，而是为Amazon Web Services(AWS)提供底层支持。</p>
+<p>更多准确信息可以直接参看<a href="http://s3.amazonaws.com/AllThingsDistributed/sosp/amazon-dynamo-sosp2007.pdf">Dynamo论文</a>。</p>
+<p>论文本身并没有提出什么新的思想，正如论文中所说，其贡献在于把非常多的技术结合到一起，来完成一个工业场景下的系统。早在2000年的时候Brewer教授就告诉我们分布式系统的CAP原则，分布式系统不可避免的会遇到如下问题：</p>
+<ol>
+<li>一致性（Consistency）</li>
+<li>可用性（Availability）</li>
+<li>分区容错性（Partition tolerance）</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/dynamo-simple-implemenation-pro-introduction.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+  <article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-13T08:27:06.000Z"><a href="/comparsion-of-cpp-serialization-method.html">2011-05-13</a></time>
+      
+      
+  
+    <h1 class="title"><a href="/comparsion-of-cpp-serialization-method.html">C++对象序列化方案对比</a></h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>序列化是将对象状态信息转换为可存储或传输的过程，序列化时，对象会将当前状态写入到临时或持久性的存储区。以后，可以通过从存储区中读取或反序列化对象的状态，重新创建该对象。</p>
+<p>对象序列化反序列化通常用于：</p>
+<ol>
+<li>将对象存储于硬盘上</li>
+<li>在网络上传送对象的字节序列</li>
+</ol>
+<p><a href="http://en.wikipedia.org/wiki/Serialization">Wiki介绍</a></p>
+ 
+      
+    </div>
+    <footer>
+      
+        
+          <div class="alignleft">
+            <a href="/comparsion-of-cpp-serialization-method.html#more" class="more-link">Read More</a>
+          </div>
+        
+        
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+
+
+<nav id="pagination">
+  
+    <a href="/page/2/" class="alignleft prev">Prev</a>
+  
+  
+    <a href="/page/4/" class="alignright next">Next</a>
+  
+  <div class="clearfix"></div>
+</nav></div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/count.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

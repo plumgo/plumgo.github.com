@@ -1,0 +1,337 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>【译】理解ReadDirectoryChangeW （实现部分） | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="获得文件夹句柄
+现在来看看实施第一部分中“平衡”解决方案细节。在阅读ReadDirectoryChangesW声明时，你会发现第一个参数是目录句柄HANDLE。你知道如何获得句柄吗？没有OpenDirectory方法，而且CreateDirectory不返回句柄，也就是说，目录必须打开FILE_LIST_DIRECTORY访问权，所以，可以使用CreateFile函数与FILE_FLAG_BACKUP_SEMANTICS标志，实现代码是这样的：
+1234567891011HANDLE hDir = ::CreateFile(strDirectory,           // pointer to the file nameFILE_LIST_DIRECTORY,    // access (read/write) modeFILE_SHARE_READ         // share mode| FILE_SHARE_WRITE| FILE_SHARE_DELETE,NULL, // security descriptorOPEN_EXISTING,         // how to createFILE_FLAG_BACKUP_SEMANTICS // file attributes| FILE_FLAG_OVERLAPPED,NULL);                 // file with attributes to copy
+
+更多信息可以参看MSDN的文档，这里还讨论了文件让问权限。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="【译】理解ReadDirectoryChangeW （实现部分）"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-12T07:53:25.000Z"><a href="/understanding-readdirectorychangew-implementation.html">2011-09-12</a></time>
+      
+      
+  
+    <h1 class="title">【译】理解ReadDirectoryChangeW （实现部分）</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <h2><strong>获得文件夹句柄</strong></h2>
+<p>现在来看看实施<a href="http://plumgo.cc/blog/2011/09/21/understanding-readdirectorychangew-theory/">第一部分</a>中“平衡”解决方案细节。在阅读<code>ReadDirectoryChangesW</code>声明时，你会发现第一个参数是目录句柄<code>HANDLE</code>。你知道如何获得句柄吗？没有<code>OpenDirectory</code>方法，而且<code>CreateDirectory</code>不返回句柄，也就是说，目录必须打开<code>FILE_LIST_DIRECTORY</code>访问权，所以，可以使用<code>CreateFile</code>函数与<code>FILE_FLAG_BACKUP_SEMANTICS</code>标志，实现代码是这样的：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div></code></pre></td><td class="code"><pre><code><div class="line">HANDLE hDir = ::CreateFile(</div><div class="line">strDirectory,           <span class="comment">// pointer to the file name</span></div><div class="line">FILE_LIST_DIRECTORY,    <span class="comment">// access (read/write) mode</span></div><div class="line">FILE_SHARE_READ         <span class="comment">// share mode</span></div><div class="line">| FILE_SHARE_WRITE</div><div class="line">| FILE_SHARE_DELETE,</div><div class="line">NULL, <span class="comment">// security descriptor</span></div><div class="line">OPEN_EXISTING,         <span class="comment">// how to create</span></div><div class="line">FILE_FLAG_BACKUP_SEMANTICS <span class="comment">// file attributes</span></div><div class="line">| FILE_FLAG_OVERLAPPED,</div><div class="line">NULL);                 <span class="comment">// file with attributes to copy</span></div></code></pre></td></tr></table></figure>
+
+<p>更多信息可以参看MSDN的<a href="http://msdn.microsoft.com/en-us/library/aa363858%28VS.85%29.aspx">文档</a>，<a href="http://msdn.microsoft.com/en-us/library/aa364399%28v=VS.85%29.aspx">这里</a>还讨论了文件让问权限。</p>
+<span id="more"></span>
+
+<p>不使用SE_BACKUP_NAME和SE_RESTORE_NAME权限会进行适当的安全检查，需要管理员权限。在Vista系统中UAC可能会使权限失效。参看<a href="http://stackoverflow.com/questions/2640601/does-using-readdirectorychangesw-require-administrator-rights">这里</a></p>
+<p>共享模式也有陷阱。如果你不希望删除目录，也可以工作，我看到一些不使用<code>FILE_SHARE_DELETE</code>的例子。然而，离开了这个权限，会组织其他进程，在该目录删除或者重命名文件，这不是我们想要的。</p>
+<p>此函数的另一个潜在的缺陷是，监控目录本身也是正在“使用”，因此不能被删除，为了监控目录中的文件，同时允许目录被删除，这样你不得不监控父目录和他的孩子。</p>
+<h2><strong>调用<code>ReadDirectoryChangesW</code></strong></h2>
+<p><code>ReadDirectoryChangesW</code>的实际调用是整个操作最简单的部分。如果你使用完成例程，唯一棘手的部分就是该缓冲区必须是<code>DWORD</code>对齐的。</p>
+<p><code>OVERLAPPED</code>结构用来表示层叠操作，但没有给<code>ReadDirectoryChangesW</code>使用的域。使用完成例程一个鲜为人知的秘密是，可以提供自己的C++指针，文档中说：<code>OVERLAPPED</code>结构中的<code>hEvent</code>成员系统并没有使用，我们可以利用这个域来实现。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div><div class="line-number">15</div><div class="line-number">16</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">void</span> CChangeHandler::BeginRead()</div><div class="line">{</div><div class="line">::ZeroMemory(&m_Overlapped, <span class="keyword">sizeof</span>(m_Overlapped));</div><div class="line">m_Overlapped.hEvent = <span class="keyword">this</span>;    DWORD dwBytes=<span class="number">0</span>;</div><div class="line">BOOL success = ::ReadDirectoryChangesW(</div><div class="line">m_hDirectory,</div><div class="line">&m_Buffer[<span class="number">0</span>],</div><div class="line">m_Buffer.size(),</div><div class="line">FALSE, <span class="comment">// monitor children?</span></div><div class="line">FILE_NOTIFY_CHANGE_LAST_WRITE</div><div class="line">| FILE_NOTIFY_CHANGE_CREATION</div><div class="line">| FILE_NOTIFY_CHANGE_FILE_NAME,</div><div class="line">&dwBytes,</div><div class="line">&m_Overlapped,</div><div class="line">&NotificationCompletion);</div><div class="line">}</div></code></pre></td></tr></table></figure>
+
+<p>此调用使用重叠I/O，<code>m_Buffer</code>无法赋值，直到完成例程被调用。</p>
+<h2><strong>调度完成例程</strong></h2>
+<p>对于“平衡”方案，只有两种方法等待完成例程的调用，如果所有调度都使用完成例程，之后<code>SleepEx</code>是你所需要的；如果你需要等待处理和调度完成例程，之后调用<code>WaitForMultipleObjectsEx</code>。“Ex”版本的函数需要传入警报状态，意味着完成例程将会被调用。</p>
+<p>要终止一个线程等待使用<code>SleepEx</code>，你可以写一个完成例程，在循环中设置标志退出。使用<code>QueueUserAPC</code>调用完成例程，允许单线程调用另一个线程中的完成例程。</p>
+<h2><strong>处理通知</strong></h2>
+<p>通知例程应该很容易，只需读取数据，并保存，但这是错的。编写完成例程也有复杂性。</p>
+<p>首先，你需要检查和处理错误代码<code>ERROR_OPERATION_ABORTED</code>，这意味着<code>CancelIo</code>已经被调用，是最后的通知，应该适当的清理。<code>CancelIo</code>将在下一节详细描述。在我的实现中，我用<code>InterlockedDecrement</code>减少<code>cOutstandingCalls</code>，跟踪我的活动调用计数，然后返回。我的对象都是通过MFC维护不需要通过完成例程自己删除。</p>
+<p>你可以在单次调用中接收多条通知，确保你使用的数据结构移至下一步时，检查<code>NextEntryOffset</code>非零。</p>
+<p>注意<code>ReadDirectoryChangesW</code>里面的“W”，说明所有的事情都是Unicode，没有ANSI版本，因此缓冲区数据也是Unicode，这样，字符串并不是NULL结尾，所以你必须使用<code>wcscpy</code>，如果使用ATL或者MFC中的CString类，则可以直接从字符串中实例化一个宽字节的CString对象。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div></code></pre></td><td class="code"><pre><code><div class="line">FILE_NOTIFY_INFORMATION* fni = (FILE_NOTIFY_INFORMATION*)buf;</div><div class="line">CStringW wstr(fni.Data, fni.Length / <span class="keyword">sizeof</span>(<span class="keyword">wchar_t</span>));</div></code></pre></td></tr></table></figure>
+
+<p>最后，你不得不在退出完成例程前重新调用<code>ReadDirectoryChangesW</code>，你可以重复使用相同的<code>OVERLAPPED</code>结构，文档说完成例程调用<code>OVERLAPPED</code>结构一次以后，不会被Windows重复调用。你必须确定你使用了不同的Buffer。</p>
+<p>有一点我不清楚改变了什么，就是通知在完成例程和<code>ReadDirectoryChangesW</code>重新调用时。</p>
+<p>我要重申，当在短时间内有许多文件修改时，你仍然会丢失通知。据文档所说，如果缓冲区溢出，缓冲区的内容会全部被丢弃，<code>lpBytesReturned</code>参数置零。但是，我不清楚当<code>dwNumberOfBytesTransfered</code>等于0时，是否完成例程是否被调用，还有是否<code>dwNumberOfBytesTransfered</code>有错误码。</p>
+<p>有一些幽默的例子，有些人试图写出正确完成例程，但是失败了。我最喜欢的是<a href="http://stackoverflow.com/questions/342668/how-to-use-readdirectorychangesw-method-with-completion-routine">stackoverflow.com</a>上面的一个例子。回答者代码缺少错误处理，没有处理<code>ERROR_OPERATION_ABORTED</code>，没有处理缓冲区溢出，也没有重新调用<code>ReadDirectoryChangesW</code>。</p>
+<h2><strong>使用通知</strong></h2>
+<p>一旦你接受和解析通知，必须清楚如何处理，这并不总是容易的，同一事件，会经常接收到有关更改的重复通知，尤其是当一个长文件被其父进程写。如果需要完整的文件，你应该在更新超时后处理每个文件。</p>
+<p>有篇<a href="http://blogs.msdn.com/ericgu/archive/2005/10/07/478396.aspx">文章</a>指出文档中<code>FILE_NOTIFY_INFORMATION</code>有一个注释：如果同时有长短名称，改函数将返回其中一个名称，但不确定是哪个。大多数时候，很容易在长短文件名来回转换，如果文件已经被删除，当然不会。因此，如果你保持一个跟踪文件列表，应该也可以追踪到，我无法在Windows Vista上重现此现象。</p>
+<p>你还会收到一些意想不到的通知。例如，即使设置<code>ReadDirectoryChangesW</code>的参数，不通知子目录，仍然会得到通知。假设有两个目录<code>C:\A和C:\AB，如果你移动</code>info.txt<code>文件从一个到另一个，关于</code>C:\Ainfo.txt<code>，你将会收到</code>FILE_ACTION_REMOVED<code>通知；而后会收到一个</code>C:\AB<code>的</code>FILE_ACTION_MODIFIED<code>通知，不会收到</code>C:\ABinfo.txt`的通知。</p>
+<p>还有更多惊喜，如果你在NTFS中使用硬链接，多个文件名引用同一个物理文件，不同的引用在不同的监控目录中，消息会转移。</p>
+<p>如果使用了Windows Vista系统引入的符号链接，不会通知生成的链接文件。</p>
+<p>还有一种可能性是，对分区做点连接，这种情况下，监测子目录不会见识链接分区中的文件。</p>
+<h2><strong>关闭</strong></h2>
+<p>我没有找到任何文章或者代码（即使在开源代码和生产代码）清晰的整理重叠调用。MSDN上的文件说取消重叠I/O需调用CancelIo，很简单。但是我的程序在退出时崩溃。调用堆栈显示一个第三方库设置alertable状态到线程中，而完成例程在CancelIo后调用，关闭处理，并删除OVERLAPPED结构。</p>
+<p>有一个调用CancelIo代码：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div></code></pre></td><td class="code"><pre><code><div class="line">CancelIo(pMonitor-&gt;hDir);</div><div class="line"><span class="keyword">if</span> (!HasOverlappedIoCompleted(&pMonitor-&gt;ol)) {</div><div class="line">    SleepEx(<span class="number">5</span>, TRUE);</div><div class="line">}</div><div class="line">CloseHandle(pMonitor-&gt;ol.hEvent);</div><div class="line">CloseHandle(pMonitor-&gt;hDir);</div></code></pre></td></tr></table></figure>
+
+<p>看起来很明确，完全拷贝到我的程序中没用。</p>
+<p>重读<code>CancelIo</code>文档：取消所有的I/O操作，返回<code>ERROR_OPERATION_ABORTED</code>错误，所有I/O正常完成发出通知。这就是说，完成例程至少在调用<code>CancelIo</code>最后调用。<code>SleepEx</code>允许，但是没有发生。最后我决定等待5ms，如果问题解决了，可以用轮询的每一个现有的重叠结构。</p>
+<p>我的最终解决方案是跟踪未完成的请求数量，并继续调用<code>SleepEx</code>直到计数为零。在示例代码中，工作顺序如下：</p>
+<ol>
+<li><p>程序调用<code>CReadDirectoryChanges::Terminate</code>。</p>
+</li>
+<li><p>终止使用<code>QueueUserAPC</code>发送消息到<code>CReadChangesServer</code>的工作线程，终止工作。</p>
+</li>
+<li><p><code>CReadChangesServer::RequestTermination</code>设置<code>m_bTerminate</code>为<code>true</code>，而后代理调用<code>CReadChangesRequest</code>对象，关闭目录处理。</p>
+</li>
+<li><p>终止返回CReadChangesServer::Run函数，注意，还没有终止。</p>
+</li>
+</ol>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">void</span> Run() {</div><div class="line">    <span class="keyword">while</span> (m_nOutstandingRequests || !m_bTerminate) {</div><div class="line">        DWORD rc = ::SleepEx(INFINITE, <span class="keyword">true</span>);</div><div class="line">    }</div><div class="line">}</div></code></pre></td></tr></table></figure>
+
+<p>5.<code>CancelIo</code>导致Windows自动调用每一个<code>CReadChangesRequest</code>重叠请求的完成例程。每次调用<code>dwErrorCode</code>都被设置为<code>ERROR_OPERATION_ABORTED</code>。</p>
+<ol>
+<li><p>完成例程删除<code>CReadChangesRequest</code>对象，减少<code>nOutstandingRequests</code>并返回队列新请求。</p>
+</li>
+<li><p><code>SleepEx</code>返回一个或多个<code>APC</code>。<code>nOutstandingRequests</code>现在为0，而且<code>m_bTerminate</code>为真，所以函数退出，线程终止干净。</p>
+</li>
+</ol>
+<p>万一关闭进行不正确，有一个主线程超时，等待工作线程终止。如果不及时终止辅助线程，我们让Windows在终止时杀死线程。</p>
+<h2><strong>网络驱动</strong></h2>
+<p><code>ReadDirectoryChangesW</code>与网络驱动同时使用，需要远程服务器支持。从其他基于Windows的计算机上的共享驱动器发出通知，Samba不会产生通知，可能是因为底层操作系统不支持这个功能。Linux用NAS不会支持通知，但高端SAN说不准。</p>
+<p><code>ReadDirectoryChangesW</code>失败返回<code>ERROR_INVALID_PARAMETER</code>，因为缓存区长度大于64KB，而且程序在监控网络上的某个目录。这是一个基本的协议共享数据包的大小限制。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Windows/">Windows</a>, <a href="/tags/Filesystem/">Filesystem</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

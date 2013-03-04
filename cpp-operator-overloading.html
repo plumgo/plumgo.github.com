@@ -1,0 +1,325 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>C++运算符重载 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="在网上搜到一篇讲得很好，转过来并略加注释。
+
+C++中预定义的运算符的操作对象只能是基本数据类型。但实际上，对于许多用户自定义类型（例如类），也需要类似的运算操作。这时就必须在C++中重新定义这些运算符，赋予已有运算符新的功能，使它能够用于特定类型执行特定的操作。运算符重载的实质是函数重载，它提供了C++的可扩展性，也是C++最吸引人的特性之一。
+一些编程语言没有运算符重载的特性，如Java。这些语言的设计者认为：运算符重载会增加编程的复杂性；或者由于使用者功力的问题引起功能上的混淆；认为a.add(b)比a+b更加面向对象（这个有点牵强）。无论如何，这些理由从反面也可以提醒我们：在重载运算符的时候要注意语义，权衡实施的必要性。
+运算符重载是通过创建运算符函数实现的，运算符函数定义了重载的运算符将要进行的操作。运算符函数的定义与其他函数的定义类似，惟一的区别是运算符函数的函数名是由关键字operator和其后要重载的运算符符号构成的。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="C++运算符重载"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-05-23T08:21:27.000Z"><a href="/cpp-operator-overloading.html">2011-05-23</a></time>
+      
+      
+  
+    <h1 class="title">C++运算符重载</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>在网上搜到一篇讲得很好，转过来并略加注释。</p>
+<hr>
+<p>C++中预定义的运算符的操作对象只能是基本数据类型。但实际上，对于许多用户自定义类型（例如类），也需要类似的运算操作。这时就必须在C++中重新定义这些运算符，赋予已有运算符新的功能，使它能够用于特定类型执行特定的操作。运算符重载的实质是函数重载，它提供了C++的可扩展性，也是C++最吸引人的特性之一。</p>
+<p>一些编程语言没有运算符重载的特性，如Java。这些语言的设计者认为：运算符重载会增加编程的复杂性；或者由于使用者功力的问题引起功能上的混淆；认为<code>a.add(b)</code>比<code>a+b</code>更加面向对象（这个有点牵强）。无论如何，这些理由从反面也可以提醒我们：在重载运算符的时候要注意语义，权衡实施的必要性。</p>
+<p>运算符重载是通过创建运算符函数实现的，运算符函数定义了重载的运算符将要进行的操作。运算符函数的定义与其他函数的定义类似，惟一的区别是运算符函数的函数名是由关键字<code>operator</code>和其后要重载的运算符符号构成的。</p>
+<span id="more"></span>
+
+<p>运算符函数定义的一般格式如下：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div></code></pre></td><td class="code"><pre><code><div class="line">&lt;返回类型说明符&gt; <span class="keyword">operator</span> &lt;运算符符号&gt;(&lt;参数表&gt;)</div><div class="line">{</div><div class="line">&lt;函数体&gt;</div><div class="line">}</div></code></pre></td></tr></table></figure>
+
+<p>运算符重载时要遵循以下规则：</p>
+<ol>
+<li>除了类属关系运算符”.”、成员指针运算符”.*”、作用域运算符”::”、sizeof运算符和三目运算符”?:”以外，C++中的所有运算符都可以重载。</li>
+<li>重载运算符限制在C++语言中已有的运算符范围内的允许重载的运算符之中，不能创建新的运算符。</li>
+<li>运算符重载实质上是函数重载，因此编译程序对运算符重载的选择，遵循函数重载的选择原则。</li>
+<li>重载之后的运算符不能改变运算符的优先级和结合性，也不能改变运算符操作数的个数及语法结构。 遵循原结构</li>
+<li>运算符重载不能改变该运算符用于内部类型对象的含义。它只能和用户自定义类型的对象一起使用，或者用于用户自定义类型的对象和内部类型的对象混合使用时。</li>
+<li>运算符重载是针对新类型数据的实际需要对原有运算符进行的适当的改造，重载的功能应当与原有功能相类似，避免没有目的地使用重载运算符。遵循原语义</li>
+</ol>
+<blockquote>
+<p>运算符函数重载一般有两种形式：重载为类的成员函数和重载为类的非成员函数。非成员函数通常是友元。（可以把一个运算符作为一个非成员、非友元函数重载。但是，这样的运算符函数访问类的私有和保护成员时，必须使用类的公有接口中提供的设置数据和读取数据的函数，调用这些函数时会降低性能。可以内联这些函数以提高性能。）</p>
+</blockquote>
+<p>运算符重载为类的成员函数的一般格式为：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div></code></pre></td><td class="code"><pre><code><div class="line">&lt;函数类型&gt; <span class="keyword">operator</span> &lt;运算符&gt;(&lt;参数表&gt;)</div><div class="line">{</div><div class="line">&lt;函数体&gt;</div><div class="line">}</div></code></pre></td></tr></table></figure>
+
+
+<blockquote>
+<p>当运算符重载为类的成员函数时，函数的参数个数比原来的操作数要少一个（后置单目运算符除外），这是因为成员函数用this指针隐式地访问了类的一个对象，它充当了运算符函数最左边的操作数。因此：</p>
+</blockquote>
+<ol>
+<li>双目运算符重载为类的成员函数时，函数只显式说明一个参数，该形参是运算符的右操作数。如<code>a + b =&gt; a.Add(b)</code></li>
+<li>前置单目运算符重载为类的成员函数时，不需要显式说明参数，即函数没有形参。如<code>++i=&gt; i.prePlus()</code></li>
+<li>后置单目运算符重载为类的成员函数时，函数要带有一个整型形参。如<code>i++=&gt;i.sufPlus(int )</code>
+调用成员函数运算符的格式如下：</li>
+</ol>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line">&lt;对象名&gt;.<span class="keyword">operator</span> &lt;运算符&gt;(&lt;参数&gt;) 它等价于 &lt;对象名&gt;&lt;运算符&gt;&lt;参数&gt;</div></code></pre></td></tr></table></figure>
+
+<p>运算符重载为类的友元函数的一般格式为：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">friend</span> &lt;函数类型&gt; <span class="keyword">operator</span> &lt;运算符&gt;(&lt;参数表&gt;)</div><div class="line">{</div><div class="line">&lt;函数体&gt;</div><div class="line">}</div></code></pre></td></tr></table></figure>
+
+<p>当运算符重载为类的友元函数时，由于没有隐含的this指针，因此操作数的个数没有变化，所有的操作数都必须通过函数的形参进行传递，函数的参数与操作数自左至右一一对应。</p>
+<p>调用友元函数运算符的格式如下：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">operator</span> &lt;运算符&gt;(&lt;参数<span class="number">1</span>&gt;,&lt;参数<span class="number">2</span>&gt;) 它等价于 &lt;参数<span class="number">1</span>&gt;&lt;运算符&gt;&lt;参数<span class="number">2</span>&gt;</div></code></pre></td></tr></table></figure>
+
+<p>例如：<code>a+b</code>等价于<code>operator +(a,b)</code>。</p>
+<p><strong>两种重载形式的比较</strong></p>
+<p>在多数情况下，将运算符重载为类的成员函数和类的友元函数都是可以的。但成员函数运算符与友元函数运算符也具有各自的一些特点：</p>
+<ol>
+<li>一般情况下，单目运算符最好重载为类的成员函数；双目运算符则最好重载为类的友元函数。</li>
+<li>以下一些双目运算符不能重载为类的友元函数：<code>=</code>、<code>()</code>、<code>[]</code>、<code>-&gt;</code>。</li>
+<li>类型转换函数只能定义为一个类的成员函数而不能定义为类的友元函数。 C++提供4个类型转换函数：<code>reinterpret_cast</code>（在编译期间实现转换）、<code>const_cast</code>（在编译期间实现转换）、<code>stactic_cast</code>（在编译期间实现转换）、<code>dynamic_cast</code>（在运行期间实现转换，并可以返回转换成功与否的标志）</li>
+<li>若一个运算符的操作需要修改对象的状态，选择重载为成员函数较好。</li>
+<li>若运算符所需的操作数（尤其是第一个操作数）希望有隐式类型转换，则只能选用友元函数。</li>
+<li>当运算符函数是一个成员函数时，最左边的操作数（或者只有最左边的操作数）必须是运算符类的一个类对象（或者是对该类对象的引用）。如果左边的操作数必须是一个不同类的对象，或者是一个内部 类型的对象，该运算符函数必须作为一个友元函数来实现。</li>
+<li>当需要重载运算符具有可交换性时，选择重载为友元函数。</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C%2B%2B/">C++</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

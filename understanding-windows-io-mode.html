@@ -1,0 +1,319 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>理解Windows I/O模型 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="先前翻译了两篇关于ReadDirectoryChangesW使用的文章：
+[译]理解ReadDirectoryChangeW （理论部分）
+[译]理解ReadDirectoryChangeW （实现部分）
+关于Windows I/O模型，脑袋里面全是问号，在网上搜集了一些资料，摘录整理如下。
+名词解释
+同步
+所谓同步，就是在发出一个功能调用时，在没有得到结果之前，该调用就不返回。按照这个定义，其实绝大多数函数都是同步调用。一般而言，我们在说同步、异步的时候，特指那些需要其他部件协作或者需要一定时间完成的任务。最常见的例子就是SendMessage。该函数发送一个消息给某个窗口，在对方处理完消息之前，这个函数不返回。当对方处理完毕以后，该函数才把消息处理函数所返回的LRESULT值返回给调用者。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="理解Windows I/O模型"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-16T07:47:29.000Z"><a href="/understanding-windows-io-mode.html">2011-09-16</a></time>
+      
+      
+  
+    <h1 class="title">理解Windows I/O模型</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>先前翻译了两篇关于<code>ReadDirectoryChangesW</code>使用的文章：</p>
+<p><a href="plumgo.cc/blog/2011/09/09/understanding-readdirectorychangew-theory/">[译]理解ReadDirectoryChangeW （理论部分）</a></p>
+<p><a href="http://plumgo.cc/blog/2011/09/12/understanding-readdirectorychangew-implementation/">[译]理解ReadDirectoryChangeW （实现部分）</a></p>
+<p>关于Windows I/O模型，脑袋里面全是问号，在网上搜集了一些资料，摘录整理如下。</p>
+<h3><strong>名词解释</strong></h3>
+<p><strong>同步</strong></p>
+<p>所谓同步，就是在发出一个功能调用时，在没有得到结果之前，该调用就不返回。按照这个定义，其实绝大多数函数都是同步调用。一般而言，我们在说同步、异步的时候，特指那些需要其他部件协作或者需要一定时间完成的任务。最常见的例子就是SendMessage。该函数发送一个消息给某个窗口，在对方处理完消息之前，这个函数不返回。当对方处理完毕以后，该函数才把消息处理函数所返回的LRESULT值返回给调用者。</p>
+<span id="more"></span>
+
+<p><strong>异步</strong></p>
+<p>异步的概念和同步相对。当一个异步过程调用发出后，调用者不能立刻得到结果。实际处理这个调用的部件在完成后，通过状态、通知和回调来通知调用者。以 <code>CAsycSocket</code>类为例（注意，<code>CSocket从CAsyncSocket</code>派生，但是起功能已经由异步转化为同步），当一个客户端通过调用 <code>Connect</code>函数发出一个连接请求后，调用者线程立刻可以朝下运行。当连接真正建立起来以后，socket底层会发送一个消息通知该对象。</p>
+<p>这里提到执行部件和调用者通过三种途径返回结果：状态、通知和回调。可以使用哪一种依赖于执行部件的实现，除非执行部件提供多种选择，否则不受调用者控制。如果执行部件用状态来通知，那么调用者就需要每隔一定时间检查一次，效率就很低（有些初学多线程编程的人，总喜欢用一个循环去检查某个变量的值，这其实是一种很严重的错误）。如果是使用通知的方式，效率则很高，因为执行部件几乎不需要做额外的操作。至于回调函数，其实和通知没太多区别。</p>
+<p><strong>阻塞</strong></p>
+<p>阻塞调用是指调用结果返回之前，当前线程会被挂起。函数只有在得到结果之后才会返回。有人也许会把阻塞调用和同步调用等同起来，实际上他是不同的。对于同步调用来说，很多时候当前线程还是激活的，只是从逻辑上当前函数没有返回而已。例如，我们在 <code>CSocket</code>中调用<code>Receive</code>函数，如果缓冲区中没有数据，这个函数就会一直等待，直到有数据才返回。而此时，当前线程还会继续处理各种各样的消息。如果主窗口和调用函数在同一个线程中，除非你在特殊的界面操作函数中调用，其实主界面还是应该可以刷新。
+<code>socket</code>接收数据的另外一个函数<code>recv</code>则是一个阻塞调用的例子。当<code>socket</code>工作在阻塞模式的时候，如果没有数据的情况下调用该函数，则当前线程就会被挂起，直到有数据为止。</p>
+<p><strong>非阻塞</strong></p>
+<p>非阻塞和阻塞的概念相对应，指在不能立刻得到结果之前，该函数不会阻塞当前线程，而会立刻返回。</p>
+<p><strong>个人理解：同步与否是从调用方的角度来描述，而阻塞与否是说调用线程，或者是被调用线程。观察角度很重要。</strong></p>
+<h3><strong>组合应用</strong></h3>
+<p><strong>同步阻塞I/O</strong></p>
+<p>行为非常容易理解，调用<code>read()</code>系统调用时，程序会阻塞并对内核进行上下文切换，触发读操作，当响应返回时（从设备中返回），数据被移动到用户空间缓冲区，应用程序解除阻塞（read调用返回）。应用程序一直在等待read调用返回，所以是同步的。</p>
+<p><strong>同步非阻塞I/O</strong></p>
+<p>这种模型中，设备是以非阻塞的形式打开的，这意味着I/O操作不会立即完成，<code>read</code>操作可能会返回一个错误代码，说明这个命令不能立即满足（<code>EAGAIN</code>或<code>EWOULDBLOCK</code>）。非阻塞的实现是I/O命令可能并不会立即满足，需要应用程序调用多次轮询操作是否完成，虽然请求是非阻塞的，但是程序需要多次调用等待完成，所以是同步的。</p>
+<p><strong>异步阻塞I/O</strong></p>
+<p>下面这种是带有阻塞通知的非阻塞I/O，这种模型中，配置的是非阻塞I/O，然后使用阻塞select系统调用来确定一个I/O描述符何时有操作。使用select调用非常有趣的是它可以用来为多个描述符提供通知，而不仅仅为一个描述符提供通知。</p>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4312?filename=asyn-blocking.png" title="Asyn Blocking"><img src="http://storage.live.com/items/9E87992F08CD005F!4312?filename=asyn-blocking.png" alt="Asyn Blocking"></a></p>
+<p><strong>异步非阻塞I/O</strong></p>
+<p>最后异步非阻塞I/O模型是一种处理与I/O重叠进行的模型，读请求会立即返回，说明<code>read</code>请求已经成功发起，在后台完成读操作时，应用程序会执行其他操作，当read相应到达时，就会产生一个信号或执行一个基于线程的回调函数来完成I/O处理过程。</p>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4313?filename=asyn-nonblocking.png" title="Asyn Non-blocking"><img src="http://storage.live.com/items/9E87992F08CD005F!4313?filename=asyn-nonblocking.png" alt="Asyn Non-blocking"></a></p>
+<h3><strong>再看Windwos I/O</strong></h3>
+<p>下面几项都是winsock I/O模型，是windows I/O的一部分，可以理解一下特别是Overlapped I/O，完成例程等概念。</p>
+<p>话说老陈有个在外地工作的女儿，不能经常回来，于是通过信件联系，他们的信会被邮递员投递到信箱里。</p>
+<p><strong>1.Select模型</strong></p>
+<p>老陈非常想看女儿的信，以至于他每个10分钟就下楼检查信箱，看是否有女儿的信。在这种下，“下楼检查信箱”然后回到楼上耽误了老陈太多时间，以至于老陈无法做其他工作。</p>
+<p><strong>2.WSAAsyncSelect模型</strong></p>
+<p>后来，老陈使用了微软公司的新式信箱，这种信箱非常先进，一旦信箱里有新的邮件，盖茨就会给老陈打电话，告诉他有新邮件了，从此，老陈不必频繁上下楼检查信箱。</p>
+<p><strong>3.WSAEventSelect模型</strong></p>
+<p>后来，微软的信箱非常畅销，使用微软信箱的人数以百万计，以至于盖茨不停地打电话太累，于是微软改进信箱，在客户家中添加一个附加装置，这个装置会监视客户的信箱，当新邮件来临，此装置会发出“新邮件到达”的声音，提醒老陈收信，盖茨不用忙了。</p>
+<p><strong>4.Overlapped I/O 事件通知模型</strong></p>
+<p>后来，微软通过调查发现，老陈不喜欢上下楼收发邮件，因为上下楼很浪费时间，于是微软再次改进信箱，只要用户告诉微软自己的家在几号，新式信箱会把信件直接送到用户家中，然后告诉用户有信到达，老陈不用亲自收发邮件了。</p>
+<p><strong>5.Overlapped I/O 完成例程模型</strong></p>
+<p>老陈接收到新的邮件后，一般的程序是：打开信封-&gt;掏出信纸-&gt;阅读信件-&gt;回复邮件。为了进一步减轻用户的负担，微软有开发了一种新技术：用户只要告诉微软对邮件的操作，微软信箱将按照这些步骤去处理信件，不需要用户亲自拆信/阅读/回复了。</p>
+<p><strong>6.IOCP模型</strong></p>
+<p>微软信箱似乎很完美，老陈也很满意，但是在一些大公司情况不同，这些公司有数以万计的信箱，每秒钟都有数以百计的信件需要处理，以至于微软信箱因经常超负荷运转而崩溃，于是微软给每个大公司拍了一名叫”Completion Port”的超级机器人，让机器人处理信件。</p>
+<p>上面模型各有优缺点，需要根据需求场景选择，前面三种模型效率已经比较高，实现起来难度不大，只有对网络要求特别高的服务器才会考虑后面的模型。</p>
+<h3><strong>理解一下</strong></h3>
+<p>之前关于<code>ReadDirectoryChangesW</code>的文章，作者最终实现的“平衡”方案，出于对文件系统的性能的考虑，使用了A4=”完成例程”的I/O模型，程序调用<code>ReadDirectoryChangesW</code>时，最后两个参数传入了<code>Overlapped</code>结构和完成例程函数指针，于是归入上面Overlapped I/O完成例程模型。</p>
+<p>操作系统会通过Overlapped结构，在I/O操作完成后将数据传送回来，也就是“老陈不用上下楼了”，完成例程函数指针也就是“拆信/读信/回信”操作的回调，在这个回调中，程序把产生的事件相关数据压入队列中，主函数中处理队列。</p>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/C%2B%2B/">C++</a>, <a href="/tags/IO/">IO</a>, <a href="/tags/Windows/">Windows</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>

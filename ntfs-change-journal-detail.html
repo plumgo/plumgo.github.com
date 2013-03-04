@@ -1,0 +1,396 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>NTFS Change Journal（USN Journal）详解 | plumgo</title>
+  <meta name="author" content="plumgo">
+  
+  <meta name="description" content="还是那个文件监控的应用，发现使用Windows APIReadDirectoryChangesW还是不能满足要求，如果变化量大又密集时，丢失通知现象很严重。好在需要监控的大部分的Windows用户都转到NTFS系统，所以打算采用分析NTFS的Change Journal（更改日志）的方法实现监控功能。
+Change Journal这名字挺直白。
+很火的桌面搜索程序：Everything就是利用了NTFS系统的这个特性，通过读取和监控USN（后面会讲）而不是扫描文件来构建索引，所以搜索速度飞快，看来这个东西很好用。但是，相关的资料却是很少，特别是系统级介绍，而且一会USN，一会Change Journal，晕啊，找到代码都不敢用，还是老老实实做功课吧，找到了微软原始的两篇论文，来好好研究一下这个Change Journal。">
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+  <meta property="og:title" content="NTFS Change Journal（USN Journal）详解"/>
+  <meta property="og:site_name" content="plumgo"/>
+
+  <link href="/favicon.png" rel="icon">
+  <link rel="alternate" href="true" title="plumgo" type="application/atom+xml">
+  <link rel="stylesheet" href="/css/style.css" media="screen" type="text/css">
+  <!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+  
+<script type="text/javascript">
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-32333314-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+</script>
+
+</head>
+
+
+<body>
+  <header id="header" class="inner"><div class="alignleft">
+  <h1><a href="/">plumgo</a></h1>
+  <h2><a href="/"></a></h2>
+</div>
+<nav id="main-nav" class="alignright">
+  <ul>
+    
+      <li><a href="/">Home</a></li>
+    
+      <li><a href="/archives">Archives</a></li>
+    
+  </ul>
+  <div class="clearfix"></div>
+</nav>
+<div class="clearfix"></div></header>
+  <div id="content" class="inner">
+    <div id="main-col" class="alignleft"><div id="wrapper">
+
+<article class="post">
+  
+  <div class="post-content">
+    <header>
+      
+        <div class="icon"></div>
+        <time datetime="2011-09-23T07:36:30.000Z"><a href="/ntfs-change-journal-detail.html">2011-09-23</a></time>
+      
+      
+  
+    <h1 class="title">NTFS Change Journal（USN Journal）详解</h1>
+  
+
+    </header>
+    <div class="entry">
+      
+        <p>还是那个文件监控的应用，发现使用Windows API<code>ReadDirectoryChangesW</code>还是不能满足要求，如果变化量大又密集时，丢失通知现象很严重。好在需要监控的大部分的Windows用户都转到NTFS系统，所以打算采用分析NTFS的Change Journal（更改日志）的方法实现监控功能。</p>
+<p>Change Journal这名字挺直白。</p>
+<p>很火的桌面搜索程序：<a href="http://www.voidtools.com/">Everything</a>就是利用了NTFS系统的这个特性，通过读取和监控USN（后面会讲）而不是扫描文件来构建索引，所以搜索速度飞快，看来这个东西很好用。但是，相关的资料却是很少，特别是系统级介绍，而且一会USN，一会Change Journal，晕啊，找到代码都不敢用，还是老老实实做功课吧，找到了微软原始的两篇论文，来好好研究一下这个Change Journal。</p>
+<span id="more"></span>
+
+<h3><strong>介绍</strong></h3>
+<p>NTFS是Windows 2000及其他基于Windows NT系统的标准文件系统，提供很多新特性（与FAT32比），而Change Journal是一个存储所有NTFS 5.0标卷（Volume）上文件和目录变化信息的数据库。每个标卷都有自己的Change Journal数据库，这些监控这些信息可以用来实现数据恢复，防止系统文件被篡改等系统级功能。在Windows NT 4.0中，这些功能，都是由之前两篇译文：[译]理解ReadDirectoryChangeW （<a href="http://plumgo.cc/blog/2011/09/09/understanding-readdirectorychangew-theory/">理论部分</a>）和（<a href="http://plumgo.cc/blog/2011/09/12/understanding-readdirectorychangew-implementation/">实现部分</a>）中提到的Windows API来完成监控的，难用的程度真是谁用谁知道。一般的非系统级应用（如杀毒软件）也可以使用Change Journal，可以避免程序扫描整个硬盘，提高效率。</p>
+<h3><strong>细节</strong></h3>
+<p>事实上Change Journal是标卷上一个特殊的文件，系统将其隐藏，所以用资源管理器或者CMD Shell都看不到，当文件系统中的文件或者目录发生改变时，就会向日志中追加记录。记录一般包括：文件名，变化时间，变化类型，而实际的数据不会记录，这样也可以保持记录文件足够小。</p>
+<p>最开始的时候，日志文件时一个磁盘标卷上的空文件，随着改变的发生，记录不断被追写进日志。每条日志有个64-bit标识，即USN（Update Sequence Number），这个USN是自增的，所以你可以通过比较USN来，找到事件发生的顺序（号码越小，事件越早），但不一定连续，有可能第一个USN是0，而第二个是128。</p>
+<p>微软最开始构建Change Journal时，称其为USN Journal，所以<code>winioctl.h</code>头文里的结构定义都是这个命名，写程序的时候也将大量使用这个名词，所以下面不区分，Change Journal=USN Journal。</p>
+<p>由于总是向文件末端添加记录，所以采用文件偏移的形式来存储USN，这样查询时只需要计算即可定位。但记录中的文件名是变长的，所以每条USN大小也不一定相同。考虑到性能问题，系统会将记录以4KB（可以参看<code>winioctl.h</code>中的<code>USN_PAGE_SIZE</code>宏）为块大小存放，每块通常会包含三四十条记录。操作系统不允许单条记录横跨两个块页，所以有时候会发生USN为空，用来填充块间隙。</p>
+<p>在NTFS标卷上，文件和目录信息存储于<code>Master File Table(MFT)</code>中，其中的记录都描述了文件或目录名，位置，大小，属性等。NTFS 5.0中，每个MFT记录项都保存了该文件或者目录最后的USN记录。当Change Journal记录时，文件系统更新被更改的MFT中最后的USN值。</p>
+<p>如果日志文件过大（大于定义的<code>MaximumSize</code>参数），系统将会清理掉文件开始部位较早的数据，通常截断开始数据需要大量的I/O操作，文件末端必须要被拷贝到新位置，这是一个耗时的过程。幸运的是，NTFS 5.0支持稀疏文件，这种机制允许删除文件中不需要的部分，而保留其余数据的逻辑偏移。所以Change Journal就是一个稀疏文件，允许清除早期记录，而不会损失太多性能，也不影响原先的文件偏移访问。更多关于稀疏文件信息可以参考<a href="http://www.microsoft.com/msj/1198/ntfs/ntfs.htm">A File System for the 21st Century: Previewing the Windows NT 5.0 File System</a>。</p>
+<p>标卷上的Change Journal功能可以关闭，这样系统就不会记录变化信息，默认情况下，NTFS标卷上的Change Journal功能是关闭的，必须明确的开启才能使用，开启和关闭可以由任意程序，任意时间完成。问题来了，如果两个程序操作时发生冲突怎么办？当一个程序禁用标卷的Change Journal，系统会清理所有先前的记录，以防止其他程序读取不可靠的数据。总的来说，Change Journal启用时会创建日志文件，禁用时会删除日志文件。</p>
+<p>每一个Change Journal会被分配一个唯一的64-bit标识（与USN标识不同），系统将会在禁用/启用之后改变这个标识，这样程序可以通过读取这个标识，来确定读取信息的可靠性。这个标识在重启后也不会变化，换句话说，如果标识不变，Change Journal会记录开机后所有文件的变化。其实这个标识是一个UTC时间戳，但是程序员不应该利用这个语义，万一微软有一点变了咋办。</p>
+<h3><strong>使用</strong></h3>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div><div class="line-number">15</div><div class="line-number">16</div><div class="line-number">17</div><div class="line-number">18</div><div class="line-number">19</div></code></pre></td><td class="code"><pre><code><div class="line">所有Change Journal操作都可以通过下面函数完成：</div><div class="line">BOOL DeviceIoControl(</div><div class="line">HANDLE hDevice,          <span class="comment">// handle to device/file/</span></div><div class="line"><span class="comment">// directory</span></div><div class="line">DWORD dwIoControlCode,   <span class="comment">// control code of operation</span></div><div class="line"><span class="comment">// to perform</span></div><div class="line">LPVOID lpInBuffer,       <span class="comment">// pointer to buffer of</span></div><div class="line"><span class="comment">// input data</span></div><div class="line">DWORD nInBufferSize,     <span class="comment">// size, in bytes, of input</span></div><div class="line"><span class="comment">// buffer</span></div><div class="line">LPVOID lpOutBuffer,      <span class="comment">// pointer to buffer for</span></div><div class="line"><span class="comment">// output data</span></div><div class="line">DWORD nOutBufferSize,    <span class="comment">// size, in bytes, of output</span></div><div class="line"><span class="comment">// buffer</span></div><div class="line">LPDWORD lpBytesReturned, <span class="comment">// receives number of bytes</span></div><div class="line"><span class="comment">// written to lpOutBuffer</span></div><div class="line">LPOVERLAPPED lpOverlapped<span class="comment">// for asynchronous</span></div><div class="line"><span class="comment">// operation</span></div><div class="line">);</div></code></pre></td></tr></table></figure>
+
+<p>第一个参数是通过<code>CreateFile</code>获得的文件/目录/设备的句柄；<code>DeviceIoControl</code>是用来请求驱动对设备进行操作的常用方法，参数<code>dwIoControlCode</code>即指定执行什么操作并定义I/O缓冲区的结构；如果<code>CreateFile</code>使用<code>FILE_FLAG_OVERLAPPED</code>调用，<code>DeviceIoControl</code>将会异步操作，如果<code>ReadFile/WriteFile</code>一样。Change Journal由NTFS驱动管理，为了与之通信，需要获得标卷的句柄：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">// Get a handle to access the Change Journal on the</span></div><div class="line"><span class="comment">// 'C' volume</span></div><div class="line">HANDLE hcj = CreateFile(<span class="string">"\.C:"</span>, GENERIC_READ,</div><div class="line">FILE_SHARE_READ | FILE_SHARE_WRITE,</div><div class="line">NULL, OPEN_EXISTING, <span class="number">0</span>, NULL);</div></code></pre></td></tr></table></figure>
+
+<p>访问标卷句柄必须具有管理员权限，所以普通用户无法运行涉及Change Journal操作的程序，更具体的操作可以查询MSDN。</p>
+<p>程序可以通过调用<code>DeviceIoControl</code>传递<code>FSCTL_QUERY_USN_JOURNAL</code>，来查询特定的数据，如果<code>DeviceIoControl</code>返回<code>TRUE</code>，则<code>USN_JOURNAL_DATA</code>结构会被填充；如果返回<code>FALSE</code>可以利用<code>GetLastError</code>（具体查MSDN）获得错误信息。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> {</div><div class="line">DWORDLONG UsnJournalID;  <span class="comment">//64-bit标识。</span></div><div class="line">USN FirstUsn;            <span class="comment">//第一条记录，所有比它还小的ID，都会被清理。</span></div><div class="line">USN NextUsn;             <span class="comment">//下一条会被写入的记录。</span></div><div class="line">USN LowestValidUsn;      <span class="comment">//这个日志中最小的USN，不一定是零。</span></div><div class="line">USN MaxUsn;              <span class="comment">//最大日志，根据最大大小算出，NextUsn比它还大，那就要清理记录。</span></div><div class="line">DWORDLONG MaximumSize;   <span class="comment">//最大大小</span></div><div class="line">DWORDLONG AllocationDelta; <span class="comment">//增长大小，如果增长超过MaximuSize，开始清理记录。</span></div><div class="line">} USN_JOURNAL_DATA, *PUSN_JOURNAL_DATA;</div></code></pre></td></tr></table></figure>
+
+<p><strong>USN记录</strong></p>
+<p>下面是USN记录结构，注意磁盘具体数据并不是这样存储的，所以永远都是由系统来填充这个结构，下面一一解释各个成员：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div><div class="line-number">15</div><div class="line-number">16</div><div class="line-number">17</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">// Version 2.0 USN_RECORD structure</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> {</div><div class="line">DWORD         RecordLength;</div><div class="line">WORD          MajorVersion;</div><div class="line">WORD          MinorVersion;</div><div class="line">DWORDLONG     FileReferenceNumber;</div><div class="line">DWORDLONG     ParentFileReferenceNumber;</div><div class="line">USN Usn;</div><div class="line">LARGE_INTEGER TimeStamp;</div><div class="line">DWORD         Reason;</div><div class="line">DWORD         SourceInfo;</div><div class="line">DWORD         SecurityId;</div><div class="line">DWORD         FileAttributes;</div><div class="line">WORD          FileNameLength;</div><div class="line">WORD          FileNameOffset;</div><div class="line">WCHAR         FileName[<span class="number">1</span>];</div><div class="line">} USN_RECORD, *PUSN_RECORD;</div></code></pre></td></tr></table></figure>
+
+<p>系统会一次读出多条记录缓存，<code>RecordLength</code>是记录总长度，包括文件名。所以利用长度来计算下一条记录位置。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div></code></pre></td><td class="code"><pre><code><div class="line">PUSN_RECORD pNext;</div><div class="line">pNext = (PUSN_RECORD) (((PBYTE) pRecord) +</div><div class="line">pRecord-&gt;RecordLength);</div></code></pre></td></tr></table></figure>
+
+<p>请不要忽视<code>MajorVersion</code>和<code>MinorVersion</code>这两个参数，毕竟NTFS也在不断演化，Change Journal有自己版本控制，要知道最新的结构，不妨参看<code>winioctl.h</code>中的声明，而且可能要在程序中判断版本，区分处理，以免出错。瞧瞧，2.3版本是这个样子的：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div><div class="line-number">15</div><div class="line-number">16</div><div class="line-number">17</div><div class="line-number">18</div><div class="line-number">19</div><div class="line-number">20</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">// HYPOTHETICAL Version 2.3 USN_RECORD structure</span></div><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> {</div><div class="line">DWORD RecordLength;</div><div class="line">WORD   MajorVersion;</div><div class="line">WORD   MinorVersion;</div><div class="line">DWORDLONG FileReferenceNumber;</div><div class="line">DWORDLONG ParentFileReferenceNumber;</div><div class="line">USN Usn;</div><div class="line">LARGE_INTEGER TimeStamp;</div><div class="line">DWORD Reason;</div><div class="line">DWORD SourceInfo;</div><div class="line">DWORD SecurityId;</div><div class="line">DWORD FileAttributes;</div><div class="line">WORD  FileNameLength;</div><div class="line">WORD  FileNameOffset;  <span class="comment">// penultimate of original version 2.0</span></div><div class="line">DWORD ExtraInfo1;      <span class="comment">// Hypothetically added in version 2.1</span></div><div class="line">DWORD ExtraInfo2;      <span class="comment">// Hypothetically added in version 2.2</span></div><div class="line">DWORD ExtraInfo3;      <span class="comment">// Hypothetically added in version 2.3</span></div><div class="line">WCHAR FileName[<span class="number">1</span>];     <span class="comment">// variable length always at the end</span></div><div class="line">} USN_RECORD, *PUSN_RECORD;</div></code></pre></td></tr></table></figure>
+
+<p>记录本身并不记录文件或者目录的全路径，而文件名由上面结构中的三个参数确定，<code>FileNameOffset</code>文件名偏移，<code>FileNameLength</code>文件名长度，<code>FileName</code>这个不能直接使用。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div></code></pre></td><td class="code"><pre><code><div class="line">WCHAR szName[MAX_PATH];</div><div class="line">CopyMemory(szName,</div><div class="line">((PBYTE) pRecord) + pRecord-&gt;FileNameOffset,</div><div class="line">pRecord-&gt;FileNameLength);</div><div class="line"><span class="comment">// Let's zero-terminate it</span></div><div class="line">szName[pRecord-&gt;FileNameLength/<span class="keyword">sizeof</span>(WCHAR)] = <span class="number">0</span>;</div></code></pre></td></tr></table></figure>
+
+<p><code>File Reference Number(FRN)</code>是文件和目录在NTFS标卷上唯一的标识，可以通过<code>ParentFileReferenceNumber</code>获得全路径。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div></code></pre></td><td class="code"><pre><code><div class="line">TCHAR szFullPath[MAX_PATH];</div><div class="line"><span class="comment">// Fill in the path of the parent directory</span></div><div class="line">PathFromParentFRN(pRecord-&gt;ParentFileReferenceNumber,</div><div class="line">szFullPath);<span class="comment">// Append name to path using the Win32 function PathAppend</span></div><div class="line">PathAppend(szFullPath, szName);</div></code></pre></td></tr></table></figure>
+
+<p>很遗憾没有一个API叫<code>PathFromParentFRN</code>，不然就可以直接读出目录名。现在你可能会奇怪，<code>FileReferenceNumber</code>是干什么的，如果我们能通过FRN得到全路径信息，那就不用上面的偏移+长度获得文件名了。事实上，找到一个目录的FRN比文件容易得多，<code>FileReferenceNumber</code>不一定是个文件还是目录，但是<code>ParentFileReferenceNumber</code>一定是个目录，所以采用偏移+长度的方式得到本名，再用<code>Parent</code>得到目录，这样就可以组合出全路径了。</p>
+<p>没错，<code>Usn</code>就是记录标识了；<code>TimeStamp</code>是一个64bit，UTC时间戳；<code>Reason</code>成员表示文件或者目录发生了何种变化，一个文件打开后，系统将<code>Reason</code>变量置零，但不写入USN记录，当变化动作发生时，如果这是一个新的<code>Reason Code</code>，就设置<code>Reason</code>变量并向日志中写入记录。如果有多个程序同时操作同一个文件，也可能会发生同一条记录的Reason有多个Reason Code，直到<code>USN_REASON_CLOS</code>E被设置，文件被关闭。</p>
+<table width="600" border="1" cellspacing="0" cellpadding="1">
+    <tbody>
+    <tr>
+    <td valign="top" width="300">操作序列</td>
+    <td valign="top" width="300">创建日志记录</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">打开存在的文件</td>
+    <td valign="top" width="300">无</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">覆盖写入数据</td>
+    <td valign="top" width="300">Data Overwrite</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">指向文件末尾(Seek to End)</td>
+    <td valign="top" width="300">无</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">追加写入数据</td>
+    <td valign="top" width="300">Data Overwrite | Data Extend</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">指向文件起始(Seek to Start)</td>
+    <td valign="top" width="300">无</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">覆盖写入数据</td>
+    <td valign="top" width="300">无</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">改变时间戳</td>
+    <td valign="top" width="300">Data Overwrite | Data Extend | Basic Info&nbsp; Change | Close</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">再次打开文件</td>
+    <td valign="top" width="300">无</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">覆盖写入数据</td>
+    <td valign="top" width="300">Data Overwrite</td>
+    </tr>
+    <tr>
+    <td valign="top" width="300">关闭文件</td>
+    <td valign="top" width="300">Data Overwrite | Close</td>
+    </tr>
+    </tbody>
+    </table>
+
+<p>还可以通过调用<code>DeviceIoControl</code>传入<code>FSCTL_WRITE_USN_CLOSE_RECORD</code>，使得系统在打开文件时清理<code>Reason</code>变量为0。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div></code></pre></td><td class="code"><pre><code><div class="line">DWORD cb;</div><div class="line">USN usn;</div><div class="line"><span class="comment">// Force a close record for</span></div><div class="line"><span class="comment">// the open file specified</span></div><div class="line"><span class="comment">// by 'hFile'</span></div><div class="line">DeviceIoControl(hFile, FSCTL_WRITE_USN_CLOSE_RECORD,</div><div class="line">NULL, <span class="number">0</span>, &usn, <span class="keyword">sizeof</span>(usn), &cb, NULL);</div></code></pre></td></tr></table></figure>
+
+<p>唯一特别的的一个<code>Reason Code</code>是<code>USN_REASON_RENAME_OLD_NAME</code>，当一个文件重命名，将会有两条记录被写入日志，分别一条记录老的文件/目录名，另一条记录新的文件/目录名，当然其<code>Reason Code</code>是<code>USN_REASON_RENAME_NEW_NAME</code>。</p>
+<p>如果<code>SourceInfo</code>成员非零，说明文件发生了改变，那这与<code>Season</code>有什么区别呢。比如“杀毒软件删除了一个你文档里面的病毒”，杀毒软件需要打开文件并覆盖受感染的部分。这会产生一个<code>Reason=USN_REASON_DATA_OVERWRITE</code>的记录，记录会因为一个数据覆盖操作<code>Reason</code>，而完成这个工作是为了杀毒<code>SourceInfo</code>。也就是说<code>SourceInfo</code>更具有逻辑意义，这个信息并不是系统指出的，而是由操作文件的程序设置。</p>
+<p><code>SecurityId</code>是系统用来描述文件安全性的成员，与设备I/O控制<code>FSCTL_SECURITY_ID_CHECK</code>仪器使用；<code>FileAttributes</code>可以通过<code>GetFileAttributes</code>调用获得文件/目录的属性。</p>
+<p><strong>读取记录</strong></p>
+<p>有了上面对记录结构的认识，下面来读取Change Journal记录。首先准备两个变量，分别是标卷句柄，与日志结构（通过<code>FSCTL_QUERY_USN_JOURNAL</code>获得）：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div></code></pre></td><td class="code"><pre><code><div class="line">HANDLE hcj;</div><div class="line">USN_JOURNAL_DATA ujd;</div></code></pre></td></tr></table></figure>
+
+<p>再通过调用<code>FSCTL_READ_USN_JOURNAL</code>调用<code>DeviceIoControl</code>，下面这个结构需要填充后作为参数输入：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="keyword">typedef</span> <span class="keyword">struct</span> {</div><div class="line">USN StartUsn;</div><div class="line">DWORD ReasonMask;</div><div class="line">DWORD ReturnOnlyOnClose;</div><div class="line">DWORDLONG Timeout;</div><div class="line">DWORDLONG BytesToWaitFor;</div><div class="line">DWORDLONG UsnJournalID;</div><div class="line">} READ_USN_JOURNAL_DATA, *PREAD_USN_JOURNAL_DATA;</div></code></pre></td></tr></table></figure>
+
+<p><code>StartUsn</code>，第一条你想访问的Usn，如果标识存在就返回，否则返回下一条，如果<code>StartUsn</code>为0，系统将会返回最开始的记录。 <code>ReasonMask</code>和<code>ReturnOnlyOnClose</code>可以按照字面理解（后面会解释），<code>StartUsn</code>并不能保证时候满足这两个条件，所以需要调用者自己验证。系统是以4KB为一块<code>USN_PAGE_SIZE</code>写入日志，所有<code>ujd.FirstUsn</code>到<code>ujd.NextUsn</code>都会依据4KB对齐。</p>
+<p>系统只会返回满足<code>ReasonMask</code>条件的记录，换句话说，你可以指定自己关心的<code>Reason Code</code>，不符合条件的记录不会包含在缓冲区中。<code>ReturnOnlyOnClose</code>是另一可以过滤记录的成员，如果其值非零，只有<code>Reason=USN_REASON_CLOSE</code>记录才会被返回，这个条件需要与<code>ReasonMask</code>相一致才行。</p>
+<p><code>Timeout</code>与<code>BytesToWaitFor</code>一起使用，作为查询时间的限制。并不是说明<code>DeviceIoControl</code>在指定的超时时间内返回，而是用来指定系统检查请求数据是否可用的周期。这个成员不像其他win32超时参数采用毫秒计时，而是使用<code>FILETIME</code>结构。当设置<code>Timeout</code>为0，即不指定超时时间；使用一个负数来指定超时时间，例如一个25秒的超时可以表示为-2500000000。如果是异步调用<code>DeviceIoControl</code>则超时成员被忽略。</p>
+<p>不要混淆<code>BytesToWaitFor</code>成员和输出缓冲区大小，或者<code>DeviceIoControl</code>的返回值，若置零，则表示函数立即返回，即使没有找打匹配的日志，如果非零，至少找到一条匹配数据然后返回。<code>BytesToWaitFor</code>定义了系统检查是否匹配数据创建的周期，例如，如果定义16384，系统将会在新建16KB数据后验证，这样可以防止一个进程读取记录时使用太多资源。<code>Timeout/BytesToWaitFor</code>只有在使用<code>ReasonMask/ReturnOnlyOnClose</code>但没有找到数据时才有效果。</p>
+<p><code>UsnJournalID</code>应该被设为<code>ujd.UsnJournalID</code>，如果日志ID已经被改变，<code>DeviceIoControl</code>调用会失败（前面说过，禁用后数据都会删除，重启后会改变这个ID）。</p>
+<p>调用<code>FSCTL_READ_USN_JOURNAL</code>是为了填充输出缓冲。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div></code></pre></td><td class="code"><pre><code><div class="line">DeviceIOControl(hcj, FSCTL_READ_USN_JOURNAL, &InBuf,</div><div class="line"><span class="keyword">sizeof</span>(InBuf), pOut, cbOut, &cbReturned, NULL);</div></code></pre></td></tr></table></figure>
+
+<p>但却无法知道具体填充了几条数据，具体排列形式是这样：</p>
+<p><a href="http://storage.live.com/items/9E87992F08CD005F!4315?filename=journalfig09.gif" title="Change Journal"><img src="http://storage.live.com/items/9E87992F08CD005F!4315?filename=journalfig09.gif" alt="Change Journal"></a>&lt;</p>
+<p>下面的代码利用<code>usnStart</code>和<code>usnEnd</code>判断数据合法性：</p>
+<p><figure class="highlight"><table><tr><td class="gutter"><pre><code><div class="line-number">1</div><div class="line-number">2</div><div class="line-number">3</div><div class="line-number">4</div><div class="line-number">5</div><div class="line-number">6</div><div class="line-number">7</div><div class="line-number">8</div><div class="line-number">9</div><div class="line-number">10</div><div class="line-number">11</div><div class="line-number">12</div><div class="line-number">13</div><div class="line-number">14</div><div class="line-number">15</div><div class="line-number">16</div><div class="line-number">17</div><div class="line-number">18</div><div class="line-number">19</div><div class="line-number">20</div><div class="line-number">21</div><div class="line-number">22</div><div class="line-number">23</div><div class="line-number">24</div><div class="line-number">25</div><div class="line-number">26</div><div class="line-number">27</div><div class="line-number">28</div></code></pre></td><td class="code"><pre><code><div class="line"><span class="comment">// Read the raw data for USNs from usnStart up to but not including usnEnd</span></div><div class="line"><span class="comment">// This can be used to read all available records by using</span></div><div class="line"><span class="comment">// the USN_JOURNAL_DATA members FirstUsn and NextUsn</span></div><div class="line"><span class="keyword">void</span> GetRawRecordData(HANDLE hcj, DWORDLONG journalId,</div><div class="line">    USN usnStart, USN usnEnd){</div><div class="line">    READ_USN_JOURNAL_DATA rujd;</div><div class="line">    rujd.StartUsn          = usnStart;</div><div class="line">    rujd.ReasonMask        = <span class="number">0xFFFFFFFF</span>;  <span class="comment">// All bits</span></div><div class="line">    rujd.ReturnOnlyOnClose = FALSE;       <span class="comment">// All entries</span></div><div class="line">    rujd.Timeout           = <span class="number">0</span>;           <span class="comment">// No timeout</span></div><div class="line">    rujd.BytesToWaitFor    = <span class="number">0</span>;           <span class="comment">// Do not wait if no records</span></div><div class="line">    rujd.UsnJournalID      = journalId;   <span class="comment">// The journal we expect to read fromwhile (rujd.StartUsn &lt; usnEnd) {</span></div><br><div class="line">    DWORD cbRead;</div><div class="line">    BYTE pData[<span class="number">8192</span> + <span class="keyword">sizeof</span>(USN)]; <span class="comment">// read in 8 KB chunks</span></div><div class="line">    BOOL fOk = DeviceIoControl(hcj, FSCTL_READ_USN_JOURNAL,</div><div class="line">        &rujd, <span class="keyword">sizeof</span>(rujd), pData, <span class="keyword">sizeof</span>(pdata), &cbRead, NULL);</div><div class="line">    <span class="keyword">if</span> (!fOk)</div><div class="line">        <span class="keyword">break</span>; <span class="comment">// handle error</span></div><div class="line">        <span class="comment">// Get first USN to request next time</span></div><div class="line">        rujd.StartUsn = * ((PUSN) pData);</div><div class="line">        PUSN_RECORD pRecord = (PUSN_RECORD) &pData[<span class="keyword">sizeof</span>(USN)];</div><div class="line">        <span class="keyword">while</span> ((PBYTE) pRecord &lt; (pData + cbRead)) {</div><div class="line">            <span class="comment">// … do something with the record …</span></div><div class="line">            pRecord = (PUSN_RECORD)((PBYTE) pRecord + pRecord-&gt;RecordLength)</div><div class="line">        }</div><div class="line">    }</div><div class="line">}</div></code></pre></td></tr></table></figure></p>
+<h3><strong>代码</strong></h3>
+<p><a href="http://download.microsoft.com/download/0/6/7/0678184e-905e-4783-9511-d4dca1f492b4/ChangeJournal.exe">ChangeJournal.exe</a></p>
+<h3><strong>参考</strong></h3>
+<ol>
+<li><p><a href="http://www.microsoft.com/msj/0999/journal/journal.aspx">Keeping an Eye on Your NTFS Drives: the Windows 2000 Change Journal Explained</a></p>
+</li>
+<li><p><a href="http://www.microsoft.com/msj/1099/journal2/journal2.aspx">Keeping an Eye on Your NTFS Drives, Part II: Building a Change Journal Application</a></p>
+</li>
+<li><p><a href="http://en.wikipedia.org/wiki/USN_Journal#cite_note-ms-web-msdn-msj-1-0">Wikipedia: USN_Journal</a></p>
+</li>
+</ol>
+
+      
+    </div>
+    <footer>
+      
+        
+        
+  
+  <div class="tags">
+    <a href="/tags/Windows/">Windows</a>, <a href="/tags/NTFS/">NTFS</a>, <a href="/tags/Filesystem/">Filesystem</a>
+  </div>
+
+        
+  <div class="addthis addthis_toolbox addthis_default_style">
+    
+      <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+    
+    
+      <a class="addthis_button_tweet"></a>
+    
+    
+      <a class="addthis_button_google_plusone" g:plusone:size="medium"></a>
+    
+    
+    <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/300/addthis_widget.js"></script>
+
+      
+      <div class="clearfix"></div>
+    </footer>
+  </div>
+</article>
+
+
+<section id="comment">
+  <h1 class="title">Comments</h1>
+  <div id="disqus_thread">
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  </div>
+</section>
+</div></div>
+    <aside id="sidebar" class="alignright">
+<div class="search">
+  <form action="http://google.com/search" method="get" accept-charset="utf-8">
+    <input type="text" name="q" results="0" placeholder="Search">
+    <input type="hidden" name="q" value="site:plumgo.cc">
+  </form>
+</div>
+
+
+
+
+<div class="widget tag">
+  <h3 class="title">Tags</h3>
+  <ul class="entry">
+  
+    <li><a href="/tags/Benchmark/">Benchmark</a><small>1</small></li>
+  
+    <li><a href="/tags/Bluesky/">Bluesky</a><small>1</small></li>
+  
+    <li><a href="/tags/Book/">Book</a><small>1</small></li>
+  
+    <li><a href="/tags/Boost/">Boost</a><small>1</small></li>
+  
+    <li><a href="/tags/C%2B%2B/">C++</a><small>8</small></li>
+  
+    <li><a href="/tags/CTeX/">CTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Consistent-Hash/">Consistent Hash</a><small>1</small></li>
+  
+    <li><a href="/tags/Dynamo/">Dynamo</a><small>3</small></li>
+  
+    <li><a href="/tags/FAST/">FAST</a><small>1</small></li>
+  
+    <li><a href="/tags/Filebench/">Filebench</a><small>1</small></li>
+  
+    <li><a href="/tags/Filesystem/">Filesystem</a><small>7</small></li>
+  
+    <li><a href="/tags/FolderTracer/">FolderTracer</a><small>1</small></li>
+  
+    <li><a href="/tags/Game/">Game</a><small>1</small></li>
+  
+    <li><a href="/tags/Google-Protocol-Buffers/">Google Protocol Buffers</a><small>2</small></li>
+  
+    <li><a href="/tags/History/">History</a><small>1</small></li>
+  
+    <li><a href="/tags/IBMR/">IBMR</a><small>1</small></li>
+  
+    <li><a href="/tags/IO/">IO</a><small>1</small></li>
+  
+    <li><a href="/tags/IPv6/">IPv6</a><small>1</small></li>
+  
+    <li><a href="/tags/J2ME/">J2ME</a><small>1</small></li>
+  
+    <li><a href="/tags/Keepass/">Keepass</a><small>1</small></li>
+  
+    <li><a href="/tags/LaTeX/">LaTeX</a><small>1</small></li>
+  
+    <li><a href="/tags/Linux/">Linux</a><small>1</small></li>
+  
+    <li><a href="/tags/Markdown/">Markdown</a><small>1</small></li>
+  
+    <li><a href="/tags/Math/">Math</a><small>1</small></li>
+  
+    <li><a href="/tags/NTFS/">NTFS</a><small>1</small></li>
+  
+    <li><a href="/tags/Network/">Network</a><small>1</small></li>
+  
+    <li><a href="/tags/OpenSSL/">OpenSSL</a><small>1</small></li>
+  
+    <li><a href="/tags/PRO/">PRO</a><small>3</small></li>
+  
+    <li><a href="/tags/Paper/">Paper</a><small>2</small></li>
+  
+    <li><a href="/tags/Probability/">Probability</a><small>1</small></li>
+  
+    <li><a href="/tags/ProcessMonitor/">ProcessMonitor</a><small>1</small></li>
+  
+    <li><a href="/tags/Python/">Python</a><small>3</small></li>
+  
+    <li><a href="/tags/SIFT/">SIFT</a><small>1</small></li>
+  
+    <li><a href="/tags/SOSP/">SOSP</a><small>1</small></li>
+  
+    <li><a href="/tags/SSD/">SSD</a><small>1</small></li>
+  
+    <li><a href="/tags/Serialization/">Serialization</a><small>2</small></li>
+  
+    <li><a href="/tags/SfM/">SfM</a><small>1</small></li>
+  
+    <li><a href="/tags/SixXS/">SixXS</a><small>1</small></li>
+  
+    <li><a href="/tags/Sqlite/">Sqlite</a><small>1</small></li>
+  
+    <li><a href="/tags/Thrift/">Thrift</a><small>1</small></li>
+  
+    <li><a href="/tags/Ubuntu/">Ubuntu</a><small>2</small></li>
+  
+    <li><a href="/tags/Unicode/">Unicode</a><small>1</small></li>
+  
+    <li><a href="/tags/Veno/">Veno</a><small>1</small></li>
+  
+    <li><a href="/tags/VirtualBox/">VirtualBox</a><small>1</small></li>
+  
+    <li><a href="/tags/Windows/">Windows</a><small>8</small></li>
+  
+    <li><a href="/tags/icon/">icon</a><small>1</small></li>
+  
+    <li><a href="/tags/inotify/">inotify</a><small>1</small></li>
+  
+    <li><a href="/tags/yield/">yield</a><small>1</small></li>
+  
+  </ul>
+</div>
+
+</aside>
+    <div class="clearfix"></div>
+  </div>
+  <footer id="footer" class="inner"><div class="alignleft">
+  
+  &copy; 2013 plumgo
+  
+</div>
+<div class="clearfix"></div></footer>
+  <script src="/js/jquery.imagesloaded.min.js"></script>
+<script src="/js/gallery.js"></script>
+
+
+<script type="text/javascript">
+var disqus_shortname = 'plumgo';
+
+(function(){
+  var dsq = document.createElement('script');
+  dsq.type = 'text/javascript';
+  dsq.async = true;
+  dsq.src = 'http://' + disqus_shortname + '.disqus.com/embed.js';
+  (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+}());
+</script>
+
+
+
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css" media="screen" type="text/css">
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+<script type="text/javascript">
+(function($){
+  $('.fancybox').fancybox();
+})(jQuery);
+</script>
+
+</body>
+</html>
